@@ -5,8 +5,8 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    barColor: 'rgba(0, 0, 0, .8), rgba(0, 0, 0, .8)',
-    barImage: 'https://demos.creative-tim.com/material-dashboard/assets/img/sidebar-1.jpg',
+    barColor: 'rgba(0, 0, 0, .6), rgba(0, 0, 0, .6)',
+    barImage: require('../src/assets/blood.png'),
     drawer: null,
   },
   mutations: {

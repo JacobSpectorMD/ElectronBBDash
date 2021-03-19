@@ -17,7 +17,7 @@
     components: {
       DashboardCoreAppBar: () => import('./components/core/AppBar'),
       DashboardCoreDrawer: () => import('./components/core/Drawer'),
-      DashboardCoreSettings: () => import('./components/core/Settings'),
+      // DashboardCoreSettings: () => import('./components/core/Settings'),
       DashboardCoreView: () => import('./components/core/View'),
     },
 
@@ -26,3 +26,9 @@
     }),
   }
 </script>
+
+<style>
+.v-application .primary {
+  background-color: #a20c3e !important;
+}
+</style>

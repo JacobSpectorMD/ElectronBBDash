@@ -27,12 +27,13 @@
       <v-list-item>
         <v-list-item-avatar
           class="align-self-center"
-          color="white"
+          color="#627E8F"
           contain
         >
           <v-img
-            src="https://demos.creative-tim.com/vuetify-material-dashboard/favicon.ico"
+            v-bind:src="require('../../../../../src/assets/blood-icon.png')"
             max-height="30"
+            max-width="30"
           />
         </v-list-item-avatar>
 
@@ -61,7 +62,6 @@
           :key="`group-${i}`"
           :item="item"
         >
-          <!--  -->
         </base-item-group>
 
         <base-item
@@ -75,16 +75,6 @@
       <!-- https://github.com/vuetifyjs/vuetify/pull/8574 -->
       <div />
     </v-list>
-
-    <template v-slot:append>
-      <base-item
-        :item="{
-          title: $t('upgrade'),
-          icon: 'mdi-package-up',
-          to: '/upgrade',
-        }"
-      />
-    </template>
   </v-navigation-drawer>
 </template>
 
@@ -141,6 +131,27 @@
           icon: 'mdi-bell',
           to: '/components/notifications',
         },
+        {
+          title: 'home',
+          icon: 'mdi-home',
+          to: '/home',
+        },
+        {
+          title: 'graphs',
+          icon: 'mdi-chart-bar',
+          to: '/graphs',
+        },
+        {
+          group: '/database',
+          icon: 'mdi-database',
+          title: 'database',
+          children: [
+            {
+              title: 'transfusions',
+              to: 'transfusions',
+            },
+          ],
+        },
       ],
     }),
 
@@ -160,7 +171,7 @@
       profile () {
         return {
           avatar: true,
-          title: this.$t('avatar'),
+          title: 'BBDash',
         }
       },
     },

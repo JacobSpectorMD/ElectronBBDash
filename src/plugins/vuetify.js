@@ -2,13 +2,14 @@ import Vue from 'vue'
 import Vuetify from 'vuetify/lib'
 import i18n from '@/i18n'
 import '@/sass/overrides.sass'
+import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loader
 
 Vue.use(Vuetify)
 
 const theme = {
-  primary: '#4CAF50',
-  secondary: '#9C27b0',
-  accent: '#9C27b0',
+  primary: '#a20c3e',
+  secondary: '#4c6b7f',
+  accent: '#D1869F',
   info: '#00CAE3',
 }
 
@@ -21,5 +22,8 @@ export default new Vuetify({
       dark: theme,
       light: theme,
     },
+  },
+  icons: {
+    iconfont: 'mdi',
   },
 })

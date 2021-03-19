@@ -50,12 +50,19 @@ export default new Router({
           path: 'maps/google-maps',
           component: () => import('@/views/dashboard/maps/GoogleMaps'),
         },
-        // Upgrade
+        // Graphs
         {
-          name: 'Upgrade',
-          path: 'upgrade',
-          component: () => import('@/views/dashboard/Upgrade'),
+          name: 'Graphs',
+          path: '/graphs',
+          component: () => import('@/views/dashboard/Graphs'),
         },
+        // Database
+        {
+          name: 'Transfusions',
+          path: 'database/transfusions',
+          component: () => import('@/views/dashboard/tables/Database'),
+        },
+
       ],
     },
   ],

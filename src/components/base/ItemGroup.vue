@@ -16,10 +16,9 @@
       <v-list-item-avatar
         v-else-if="item.avatar"
         class="align-self-center"
-        color="white"
-        contain
+        color="grey"
       >
-        <v-img src="https://demos.creative-tim.com/vuetify-material-dashboard/favicon.ico" />
+        <v-img src="https://demos.creative-tim.com/material-dashboard-pro/assets/img/faces/avatar.jpg" />
       </v-list-item-avatar>
 
       <v-list-item-content>

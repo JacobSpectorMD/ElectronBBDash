@@ -12,5 +12,11 @@ module.exports = {
       localeDir: 'locales',
       enableInSFC: false,
     },
+    electronBuilder: {
+      nodeIntegration: true,
+      externals: ['sqlite3'],
+      enableRemoteModule: true,
+      preload: 'src/preload.js',
+    },
   },
 }

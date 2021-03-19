@@ -145,4 +145,7 @@
       top: -40px
       transition: .3s ease
       z-index: 1
+
+  .green-medium
+    background-color: #364d5c
 </style>
