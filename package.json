@@ -1,5 +1,5 @@
 {
-  "name": "vuetify-material-dashboard",
+  "name": "BBDash",
   "version": "2.1.0",
   "private": true,
   "scripts": {
@@ -16,7 +16,7 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
-  "main": "src/main.js",
+  "main": "background.js",
   "dependencies": {
     "aws-sdk": "^2.865.0",
     "core-js": "^3.6.5",

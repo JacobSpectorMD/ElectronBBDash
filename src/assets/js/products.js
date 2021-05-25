@@ -39,10 +39,6 @@ export default function addSwarm (transfusionData, productType, divId) {
     .thresholds(binValues)
   var bins = bin(transfusionData)
 
-  const newDiv = d3.select('#' + divId)
-    .append('div')
-    .attr('class', 'new-div')
-
   const margin = { top: 10, right: 30, bottom: 45, left: 40 }
   const width = 0.9 * $('#' + divId).width()
   const height = 500 - margin.top - margin.bottom
@@ -60,7 +56,7 @@ export default function addSwarm (transfusionData, productType, divId) {
   var selectLines = 0
   var selectVals = []
 
-  var svg = newDiv.append('svg')
+  var svg = d3.select('#' + divId + ' svg')
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
     .on('click', function (e) {

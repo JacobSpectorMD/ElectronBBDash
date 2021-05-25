@@ -27,13 +27,12 @@
       <v-list-item>
         <v-list-item-avatar
           class="align-self-center"
-          color="#627E8F"
           contain
         >
           <v-img
-            v-bind:src="require('../../../../../src/assets/blood-icon.png')"
-            max-height="30"
-            max-width="30"
+            v-bind:src="require('../../../../../src/assets/icon.png')"
+            max-height="40"
+            max-width="40"
           />
         </v-list-item-avatar>
 
@@ -96,46 +95,46 @@
 
     data: () => ({
       items: [
-        {
-          icon: 'mdi-view-dashboard',
-          title: 'dashboard',
-          to: '/',
-        },
-        {
-          icon: 'mdi-account',
-          title: 'user',
-          to: '/pages/user',
-        },
-        {
-          title: 'rtables',
-          icon: 'mdi-clipboard-outline',
-          to: '/tables/regular-tables',
-        },
-        {
-          title: 'typography',
-          icon: 'mdi-format-font',
-          to: '/components/typography',
-        },
-        {
-          title: 'icons',
-          icon: 'mdi-chart-bubble',
-          to: '/components/icons',
-        },
-        {
-          title: 'google',
-          icon: 'mdi-map-marker',
-          to: '/maps/google-maps',
-        },
-        {
-          title: 'notifications',
-          icon: 'mdi-bell',
-          to: '/components/notifications',
-        },
-        {
-          title: 'home',
-          icon: 'mdi-home',
-          to: '/home',
-        },
+        // {
+        //   icon: 'mdi-view-dashboard',
+        //   title: 'dashboard',
+        //   to: '/',
+        // },
+        // {
+        //   icon: 'mdi-account',
+        //   title: 'user',
+        //   to: '/pages/user',
+        // },
+        // {
+        //   title: 'rtables',
+        //   icon: 'mdi-clipboard-outline',
+        //   to: '/tables/regular-tables',
+        // },
+        // {
+        //   title: 'typography',
+        //   icon: 'mdi-format-font',
+        //   to: '/components/typography',
+        // },
+        // {
+        //   title: 'icons',
+        //   icon: 'mdi-chart-bubble',
+        //   to: '/components/icons',
+        // },
+        // {
+        //   title: 'google',
+        //   icon: 'mdi-map-marker',
+        //   to: '/maps/google-maps',
+        // },
+        // {
+        //   title: 'notifications',
+        //   icon: 'mdi-bell',
+        //   to: '/components/notifications',
+        // },
+        // {
+        //   title: 'home',
+        //   icon: 'mdi-home',
+        //   to: '/home',
+        // },
         {
           title: 'graphs',
           icon: 'mdi-chart-bar',
@@ -147,10 +146,31 @@
           title: 'database',
           children: [
             {
+              title: 'locations',
+              to: 'locations',
+            },
+            {
+              title: 'products',
+              to: 'products',
+            },
+            {
+              title: 'providers',
+              to: 'providers',
+            },
+            {
+              title: 'Specialties',
+              to: 'specialties',
+            },
+            {
               title: 'transfusions',
               to: 'transfusions',
             },
           ],
+        },
+        {
+          title: 'Settings',
+          icon: 'mdi-cog',
+          to: '/settings',
         },
       ],
     }),
@@ -190,6 +210,20 @@
 
 <style lang="sass">
   @import '~vuetify/src/styles/tools/_rtl.sass'
+
+  .v-navigation-drawer__content a:hover,
+  .v-navigation-drawer__content *
+    outline-width: 0 !important
+
+  .v-navigation-drawer__content .v-list-item__title
+    font-size: 16px
+    font-weight: 500
+
+  .v-application .v-navigation-drawer .v-navigation-drawer__content .v-list .v-list-group .v-list-group__header .v-list-item__content .v-list-item__title
+    font-size: 16px
+    font-weight: 500
+  .v-navigation-drawer__content .v-list-group__items .v-list-item .v-list-item__title
+    font-size: 14px
 
   #core-navigation-drawer
     .v-list-group__header.v-list-item--active:before

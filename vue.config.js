@@ -1,6 +1,7 @@
 module.exports = {
   devServer: {
     disableHostCheck: true,
+    host: 'localhost',
   },
 
   transpileDependencies: ['vuetify'],
@@ -13,6 +14,12 @@ module.exports = {
       enableInSFC: false,
     },
     electronBuilder: {
+      builderOptions: {
+        appId: 'com.jacobspectormd.bbdash',
+        mac: {
+          icon: 'build/icons/icon.png',
+        },
+      },
       nodeIntegration: true,
       externals: ['sqlite3'],
       enableRemoteModule: true,

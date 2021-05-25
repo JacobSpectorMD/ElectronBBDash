@@ -4,6 +4,7 @@ import { app, ipcMain, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
+import sqlite3 from "sqlite3";
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // import db from './datastore'
 
@@ -76,21 +77,38 @@ const fs = require('fs')
 const db = require('./assets/js/database.js')
 
 ipcMain.on('getDatabase', function (e) {
+  const settingsDbPath = path.join(app.getPath('userData'), 'settings.db')
+  if (!fs.existsSync(settingsDbPath)) {
+    db.createDatabase(settingsDbPath)
+  }
+  const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
+  const sql = 'SELECT *  FROM database WHERE selected=1'
+
   console.log('getDatabase')
   const dbPath = path.join(app.getPath('userData'), 'bloodProducts.db')
   console.log(dbPath)
   if (!fs.existsSync(dbPath)) {
     db.createDatabase(dbPath)
   }
-  win.webContents.send('getDatabase', dbPath)
+  win.webContents.send('getDatabase', dbPath, settingsDbPath)
 })
+
+function getDbLocation () {
+  return new Promise((resolve, reject) => {
+    settingsDb.get(sql, function (err, row) {
+      if (err) {
+        console.log(err)
+      }
+      resolve(row)
+    })
+  })
+}
 
 // const fs = require('fs')
 // const sqlite3 = require('sqlite3')
 // const remote = require('electron')
 // console.log(remote)
 //
-
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {

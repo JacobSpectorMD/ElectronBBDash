@@ -5,6 +5,7 @@ const darkGreen = '#4c6b7f'
 // const red = '#a20c3e'
 const darkRed = '#650827'
 const lightRed = '#C5A2AE'
+
 // var data
 // var filters
 // var selectedProvider
@@ -88,13 +89,14 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
         providerData = providerData.filter(x => x.value.specialty === specialty)
     }
 
-    const newDiv = d3.select('#' + divId)
-      .append('div')
-      .attr('class', 'new-div')
-      .style('overflow-x', 'auto')
+    // const newDiv = d3.select('#' + divId)
+    //   .append('div')
+    //   .attr('class', 'new-div')
+    //   .style('overflow-x', 'auto')
 
     // Add the svg. If an svg is being redrawn to show a specialty comparsion, insert the svg in the same place
-    var svg = newDiv.append('svg').attr('id', 'providersSvg').attr('class', 'providers-svg')
+    // var svg = newDiv.append('svg').attr('id', 'providersSvg').attr('class', 'providers-svg')
+    var svg = d3.select('#' + divId + ' svg').attr('id', 'providersSvg')
 
     // Sort the providers by highest median test value
     providerData.sort(function (a, b) { return b[1].testMed - a[1].testMed })
@@ -114,7 +116,6 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
             provider[1].units.forEach(function (unit) { unit.provider_name = provider[0] })
         })
     }
-    console.log(providerData)
     // Label the providers on the x-axis either anonymously or with names
     const providerNames = providerData.map(x => x[1].provider_name)
 
@@ -128,7 +129,6 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
 
     svg.attr('width', width)
     svg.attr('height', '550')
-    console.log(width)
     var x = d3.scaleBand()
         .domain(providerNames)
         .range([50, width])
@@ -211,24 +211,7 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
             .attr('x', function (d) { return x(d[1].provider_name) + tickSpacing / 2 })
             .attr('y', function (d) { return y(d[1].test_max) - 4 })
 
-    // var tip = d3.tip()
-    //     .attr('class', 'd3-tip')
-    //     .html(function (d) {
-    //         return `
-    //             <b>Name:</b> ${d.provider_name}<br>
-    //             <b>Specialty:</b> ${d[1].specialty}<br>
-    //             <b>Transfusions:</b> ${d[1].units.length}<br>
-    //             <b>Min/Median/Max <span id="tip-test-type"></span></b>: ${d[1].test_min}/${d[1].testMed}/${d[1].test_max}<br>
-    //             <button class="specialty-comparison-button" data-specialty="${d[1].specialty}">Specialty Comparison</button>
-    //             <button>View Provider's Transfusions</button>
-    //         `
-    //     })
-    // dataG.call(tip)
-
-  var tip = d3.select('#' + divId).append('div')
-    .attr('class', 'tooltip')
-    .attr('id', divId + '-tool-tip')
-    .style('opacity', 0)
+    var tip = d3.select('#' + divId + ' .toolTip')
 
     dataG.selectAll('.box')
       .data(providerData)
@@ -245,10 +228,8 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
         .attr('data-specialty', function (d) { return d[1].specialty })
         .attr('data-provider', function (d) { return d[1].provider_name })
         .on('click', function (e, d) {
-          tip.transition()
-            .duration(200)
-            .style('opacity', 1)
-          tip.html(`
+          $('#' + divId + '.toolTip').data(d)
+          tip.select('.stats').html(`
             <table>
               <tbody class="tip-table">
                 <tr><td class="label"><strong>Name: </strong></td><td class="value">${d[1].provider_name}</td></tr>
@@ -257,17 +238,77 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
                 <tr><td class="label"><strong><strong>Min/Median/Max: </strong></td><td class="value">${d[1].test_min}/${d[1].testMed}/${d[1].test_max}</td></tr>
               </tbody>
             </table>
-            <button class="specialty-comparison-button" data-specialty="${d[1].specialty}">Specialty Comparison</button>
-            <button>View Provider's Transfusions</button>
           `)
-            .style('left', (e.offsetX + 16) + 'px')
-            .style('top', (e.offsetY - 16) + 'px')
+
+          // Place tip towards the right if the right half of the screen is clicked
+          const scrolled = $('#' + divId + ' .svg-div').scrollLeft()
+          const clickLocation = e.offsetX - scrolled
+          const divWidth = $('#' + divId).width()
+          let x
+          if (clickLocation > divWidth / 2) {
+            x = e.offsetX - 21 - scrolled - $('#' + divId + ' .toolTip').width()
+          } else {
+            x = e.offsetX + 21 - scrolled
+          }
+          tip.transition()
+            .duration(200)
+            .style('opacity', 1)
+            .style('left', x + 'px')
+            .style('top', (e.offsetY - 21) + 'px')
+            .style('pointer-events', 'unset')
         })
+
+  dataG.selectAll('.hidden-box')
+    .data(providerData)
+    .enter()
+    .append('rect')
+    .attr('class', 'hidden-box')
+    .attr('fill', 'transparent')
+    .attr('x', function (d) { return x(d[1].provider_name) + tickSpacing / 2 - 5 })
+    .attr('y', function (d) { return y(d[1].test_max) - 15 })
+    .attr('height', function (d) {
+      return y(d[1].test_min) - y(d[1].test_max) + 30
+    })
+    .attr('width', 10)
+    .attr('data-specialty', function (d) { return d[1].specialty })
+    .attr('data-provider', function (d) { return d[1].provider_name })
+    .on('click', function (e, d) {
+      $('#' + divId + '.toolTip').data(d)
+      tip.select('.stats').html(`
+            <table>
+              <tbody class="tip-table">
+                <tr><td class="label"><strong>Name: </strong></td><td class="value">${d[1].provider_name}</td></tr>
+                <tr><td class="label"><strong><strong>Specialty: </strong></td><td class="value">${d[1].specialty}</td></tr>
+                <tr><td class="label"><strong><strong>Transfusions: </strong></td><td class="value">${d[1].units.length}</td></tr>
+                <tr><td class="label"><strong><strong>Min/Median/Max: </strong></td><td class="value">${d[1].test_min}/${d[1].testMed}/${d[1].test_max}</td></tr>
+              </tbody>
+            </table>
+          `)
+
+      // Place tip towards the right if the right half of the screen is clicked
+      const scrolled = $('#' + divId + ' .svg-div').scrollLeft()
+      const clickLocation = e.offsetX - scrolled
+      const divWidth = $('#' + divId).width()
+      let x
+      if (clickLocation > divWidth / 2) {
+        x = e.offsetX - 21 - scrolled - $('#' + divId + ' .toolTip').width()
+      } else {
+        x = e.offsetX + 21 - scrolled
+      }
+      tip.transition()
+        .duration(200)
+        .style('opacity', 1)
+        .style('left', x + 'px')
+        .style('top', (e.offsetY - 21) + 'px')
+        .style('pointer-events', 'unset')
+    })
+
     svg.on('click', function (e, d) {
-      if (!d3.select(e.target).classed('box')) {
+      if (!d3.select(e.target).classed('box') && !d3.select(e.target).classed('hidden-box')) {
         tip.transition()
           .duration(200)
           .style('opacity', 0)
+          .style('pointer-events', 'none')
       }
     })
     dataG.selectAll('.median')
@@ -280,6 +321,7 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
             .attr('cx', function (d) { return x(d[1].provider_name) + tickSpacing / 2 })
             .attr('cy', function (d) { return y(d[1].testMed) })
             .attr('data-specialty', function (d) { return d[1].specialty })
+            .style('pointer-events', 'none')
 
     dataG.selectAll('.transfusion')
         .data(allUnits)
@@ -287,10 +329,11 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
         .append('circle')
             .attr('class', 'transfusion')
             .attr('fill', darkRed)
-            .attr('r', '3')
+            .attr('r', '4')
             .attr('cx', function (d) { return x(d.provider_name) + tickSpacing / 2 })
             .attr('cy', function (d) { return y(d.test_result) })
-            .attr('display', 'none')
+            .attr('opacity', 0)
+            .style('pointer-events', 'none')
 }
 
 // // Draw a specialty comparison graph when a user selects a provider and clicks the specialty comparison button

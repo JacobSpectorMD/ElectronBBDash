@@ -63,3 +63,16 @@ module.exports.createDatabase = function (dbPath) {
     `)
   return db
 }
+
+module.exports.createSettingsDatabase = function (dbPath) {
+  const settingsDb = new sqlite3.Database(dbPath)
+  settingsDb.run(`
+        CREATE TABLE IF NOT EXISTS database(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            location TEXT,
+            selected INTEGER,
+            UNIQUE(location)
+        )
+    `)
+  return settingsDb
+}

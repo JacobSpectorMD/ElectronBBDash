@@ -1,45 +1,83 @@
 <template>
   <base-material-card
-    color="#687A85"
-    ref="el"
     :id="id"
+    ref="el"
+    @click.prevent="graphClicked()"
+    color="#687A85"
   >
-    <template v-slot:heading>
+    <template
+      v-slot:heading
+      class="graph-heading"
+    >
+      <div>
+        <div class="text-h3 font-weight-light graph-heading"> {{ graphLabel }} </div>
+        <div
+          v-if="specialty"
+          class="text-subtitle-1 font-weight-light"
+        >{{ specialty }}</div>
+      </div>
+      <div class="heading-buttons">
+        <v-btn
+          v-show="view === 'median'"
+          elevation="0"
+          class="heading-button"
+          @click="setView('transfusion')"
+        >
+          <v-icon class="mr-2">
+            mdi-dots-vertical
+          </v-icon>
+          Transfusion View
+        </v-btn>
+        <v-btn
+          v-show="view === 'transfusion'"
+          elevation="0"
+          class="heading-button"
+          @click="setView('median')"
+        >
+          <v-icon class="mr-2">
+            mdi-distribute-horizontal-center
+          </v-icon>
+          Median and Range View
+        </v-btn>
+      </div>
+    </template>
+    <div
+      class='svg-div'
+      @scroll="hideTooltip"
+    >
       <div
-        class="text-h3 font-weight-light graph-heading"
+        class="toolTip"
       >
-        {{ graphLabel }}
-        <span v-if="specialty"> - {{ specialty }}</span>
-        <div class="heading-buttons">
+        <div class="stats"></div>
+        <div class="button-div">
           <v-btn
-            v-show="view === 'median and range'"
-            @click="setView('transfusion')"
             elevation="0"
-            class="heading-button"
+            class="specialty-comparison-button secondary--text"
+            @click="specialtyComparison"
+            color="white"
           >
-            <v-icon class="mr-2">
-              mdi-dots-vertical
-            </v-icon>
-            Transfusion View
+            Specialty Comparison
           </v-btn>
           <v-btn
-            v-show="view === 'transfusion'"
-            @click="setView('median and range')"
             elevation="0"
-            class="heading-button"
+            class="show-provider-button"
+            @click="emitProviderInfo"
+            color="white"
           >
-            <v-icon class="mr-2">
-              mdi-distribute-horizontal-center
-            </v-icon>
-            Median and Range View
+            View Provider's Transfusions
           </v-btn>
         </div>
       </div>
-    </template>
+      <svg
+        @click="setProvider"
+        :class="'providersSvg ' + view"
+      ></svg>
+    </div>
   </base-material-card>
 </template>
 
 <script>
+  import $ from 'jquery'
   import addSwarm from '@/assets/js/products.js'
   import createProviderGraph from '@/assets/js/providers'
 
@@ -78,46 +116,77 @@
     },
     data () {
       return {
+        providerData: {},
         view: '',
       }
-    },
-    methods: {
-      setView (view) {
-        const cmp = this
-        setTimeout(function () {
-          cmp.view = view
-        }, 500)
-      },
     },
     mounted () {
       if (this.mode === 'Products') {
         addSwarm(this.transfusions, this.productType, this.id)
       } else if (this.mode === 'Providers') {
-        this.view = 'median and range'
+        if (this.view === '') { this.view = 'median' }
         createProviderGraph(this.$db, this.transfusions, this.productType, this.anonymous, this.id)
       }
     },
+    methods: {
+      hideTooltip () {
+        $('#' + this.id + ' .toolTip').css('opacity', '0').css('pointer-events', 'none')
+      },
+      setView (view) {
+        const cmp = this
+        setTimeout(function () {
+          cmp.view = view
+        }, 350)
+      },
+      setProvider (e) {
+        this.providerData = e.target.__data__
+      },
+      specialtyComparison () {
+        this.$emit('specialtyComparison', this.providerData[1].specialty)
+      },
+      emitProviderInfo (e) {
+        this.$emit('sentProviderInfo', this.providerData[1])
+      },
+    },
   }
-  // $(document).on('click', '#individual-view', function () {
-  //     $('.median').css('display', 'none')
-  //     $('.box').css('fill', '#E9E9EA')
-  //     $('.transfusion').css('display', 'initial')
-  // })
-  //
-  // $(document).on('click', '#median-and-range-view', function () {
-  //     $('.median').css('display', 'initial')
-  //     $('.box').css('fill', 'var(--teal)')
-  //     $('.transfusion').css('display', 'none')
-  // })
 </script>
 
 <style scoped>
-  .graph-heading {
+  /deep/ .text-start {
     display: flex;
     justify-content: space-between;
+    align-items: center;
   }
 
   .heading-button {
     background-color: rgba(0, 0, 0, 0) !important;
+  }
+  .svg-div {
+    overflow-x: auto;
+  }
+  .toolTip {
+    opacity: 0;
+    position: absolute;
+    background-color: #4c6b7f;
+    color: white;
+    border-radius: 4px;
+    padding: 8px;
+    z-index: 2;
+  }
+
+  /deep/ svg.median .transfusion {
+    opacity: 0;
+  }
+
+  /deep/ svg.transfusion .median {
+    opacity: 0;
+  }
+
+  /deep/ svg.transfusion .transfusion {
+    opacity: 1;
+  }
+
+  /deep/ svg.transfusion .box {
+    fill: #C4CFD5;
   }
 </style>

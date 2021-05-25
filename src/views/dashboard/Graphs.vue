@@ -53,6 +53,14 @@
                   label="Product Type"
                 />
               </v-col>
+              <v-col cols="2">
+                <v-select
+                  v-model="selectedSpecialty"
+                  :items="specialties"
+                  label="Specialty"
+                  clearable
+                />
+              </v-col>
               <v-col cols="1">
                 <v-select
                   v-model="selectedLocation"
@@ -122,7 +130,7 @@
               <transition name="grow">
                 <v-col
                   v-if="graphMode === 'Providers'"
-                  cols="1"
+                  cols="2"
                 >
                   <v-checkbox
                     v-model="anonymous"
@@ -134,11 +142,11 @@
                   />
                 </v-col>
               </transition>
-              <v-col cols="1">
+              <v-col cols="2">
                 <v-btn
                   color="primary"
                   elevation="2"
-                  @click="submitGraph()"
+                  @click="submitGraph('graphButton')"
                 >
                   Graph
                 </v-btn>
@@ -150,17 +158,26 @@
     </v-row>
 
     <v-row>
-      <v-col>
+      <v-col v-show="!provider">
         <product-graph
           v-for="graph in graphs"
-          :anonymous="anonymous"
           :id="graph.id"
           :key="graph.productType + graph.time"
           :graph-label="graph.graphLabel"
           :mode="graphMode"
           :product-type="graph.productType"
           :transfusions="graph.transfusions"
+          :anonymous="anonymous"
+          :specialty="specialty"
+          @sentProviderInfo="showProviderInfo"
+          @specialtyComparison="specialtyComparison"
           color="#687A85"
+        />
+      </v-col>
+      <v-col v-if="provider">
+        <provider-stats
+          :provider="provider"
+          @hide-provider-stats="hideProviderInfo"
         />
       </v-col>
     </v-row>
@@ -170,11 +187,13 @@
 <script>
   // import $ from 'jquery'
   import ProductGraph from '@/views/dashboard/graphs/ProductGraph'
+  import ProviderStats from '@/views/dashboard/components/ProviderStats'
 
   export default {
     name: 'Graphs',
     components: {
       'product-graph': ProductGraph,
+      'provider-stats': ProviderStats,
     },
     data () {
       return {
@@ -183,9 +202,7 @@
         graphIds: [0, 1, 2],
         graphs: [],
         graphMode: 'Products',
-        startDate: '',
-        selectedLocation: '',
-        transfusionData: {},
+        index: 0,
         locations: [],
         menu: false,
         menu2: false,
@@ -213,8 +230,15 @@
           },
         ],
         productType: 'ALL',
+        provider: null,
+        selectedLocation: '',
+        selectedSpecialty: '',
+        specialty: '',
+        specialties: [],
+        startDate: '',
         tabs: 0,
-        index: 0,
+        transfusionData: {},
+        unfilteredTransfusionData: {},
       }
     },
     computed: {
@@ -228,9 +252,19 @@
       if (this.locations.length === 0) {
         const sql = 'SELECT * FROM location ORDER BY code ASC'
         this.$db.all(sql, function (err, rows) {
-          if (err) { console.log(err) }
+          if (err) { }
           rows.forEach(function (row) {
             cmp.locations.push(row.code)
+          })
+        })
+      }
+
+      if (this.specialties.length === 0) {
+        const sql = 'SELECT * FROM specialty ORDER BY name ASC'
+        this.$db.all(sql, function (err, rows) {
+          if (err) { }
+          rows.forEach(function (row) {
+            cmp.specialties.push(row.name)
           })
         })
       }
@@ -238,16 +272,25 @@
     methods: {
       clearGraphs () {
         this.graphs.length = 0
+        this.provider = null
+        this.unfilteredTransfusionData.length = 0
       },
-      submitGraph () {
+      submitGraph (submittedBy) {
         this.clearGraphs()
         const cmp = this
         const productType = this.productType
         const location = this.selectedLocation
         const startDate = this.$refs.startDateInput.value
         const endDate = this.$refs.endDateInput.value
+        if (submittedBy === 'graphButton') {
+          if (!cmp.selectedSpecialty) {
+            cmp.specialty = ''
+          } else {
+            cmp.specialty = cmp.selectedSpecialty
+          }
+        }
 
-        this.getTransfusionData(productType, '', location, startDate, endDate)
+        this.getTransfusionData(productType, this.specialty, location, startDate, endDate)
           .then(function (rows) { cmp.drawGraphs(rows, productType) })
       },
       drawGraphs (rows, productType) {
@@ -283,6 +326,40 @@
         } else if (mode === 'Providers' && this.productType === 'ALL') {
           this.productType = 'CRYOPPT'
         }
+      },
+      showProviderInfo (providerData) {
+        for (let i = 0; i < providerData.units.length; i++) {
+          providerData.units[i].id = i
+        }
+        this.provider = providerData
+      },
+      specialtyComparison (specialty) {
+        this.specialty = specialty
+        this.submitGraph('specialtyComparison')
+      },
+      hideProviderInfo () {
+        this.provider = null
+      },
+      getProviderTransfusions (providerName) {
+        const cmp = this
+        return new Promise(function (resolve, reject) {
+          const sql = 'SELECT *  FROM transfusion AS t INNER JOIN provider AS p ON p.id=t.provider_id WHERE p.provider_name=' + providerName
+          const testDict = { fib: 'Fibrinogen', pro: 'PT', hgb: 'Hemoglobin', plt: 'Platelets' }
+          cmp.$db.all(sql, function (err, rows) {
+            if (err) {
+              console.log(err)
+            }
+            const filteredRows = []
+            rows.forEach(function (row) {
+              if (row.test_result !== '-1' && row.product) {
+                row.value = parseFloat(row.test_result)
+                row.test = testDict[row.test_type]
+                filteredRows.push(row)
+              }
+            })
+            resolve(filteredRows)
+          })
+        })
       },
       getTransfusionData (productType, specialty, location, startDateText, endDateText) {
         const cmp = this
@@ -346,18 +423,6 @@
 <style>
   div.v-input--selection-controls {
     margin-top: 0px;
-  }
-  div.tooltip {
-    position: absolute;
-    text-align: center;
-    padding: 16px;
-    font-size: 14px;
-    background: #4c6b7f;
-    border: 0px;
-    border-radius: 4px;
-    pointer-events: none;
-    color: white;
-    z-index: 2;
   }
 
   .tip-table > tr.label {
