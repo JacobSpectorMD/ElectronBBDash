@@ -24,7 +24,11 @@ new Vue({
   render: h => h(App),
 }).$mount('#app')
 
-ipcRenderer.on('getDatabase', function (e, dbPath, settingsDb) {
-  Vue.prototype.$db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE)
-  Vue.prototype.$settingsDb = settingsDb
+ipcRenderer.on('getDatabase', function (e, dbPath, settingsDbPath) {
+  if (dbPath) {
+    Vue.prototype.$db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE)
+  } else {
+    Vue.prototype.$db = null
+  }
+  Vue.prototype.$settingsDbPath = settingsDbPath
 })

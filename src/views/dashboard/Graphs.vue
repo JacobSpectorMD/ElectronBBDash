@@ -249,7 +249,7 @@
     },
     mounted () {
       const cmp = this
-      if (this.locations.length === 0) {
+      if (this.locations.length === 0 && cmp.$db) {
         const sql = 'SELECT * FROM location ORDER BY code ASC'
         this.$db.all(sql, function (err, rows) {
           if (err) { }
@@ -259,7 +259,7 @@
         })
       }
 
-      if (this.specialties.length === 0) {
+      if (this.specialties.length === 0 && cmp.$db) {
         const sql = 'SELECT * FROM specialty ORDER BY name ASC'
         this.$db.all(sql, function (err, rows) {
           if (err) { }
@@ -345,6 +345,11 @@
         return new Promise(function (resolve, reject) {
           const sql = 'SELECT *  FROM transfusion AS t INNER JOIN provider AS p ON p.id=t.provider_id WHERE p.provider_name=' + providerName
           const testDict = { fib: 'Fibrinogen', pro: 'PT', hgb: 'Hemoglobin', plt: 'Platelets' }
+
+          if (!cmp.$db) {
+            resolve([])
+          }
+
           cmp.$db.all(sql, function (err, rows) {
             if (err) {
               console.log(err)
@@ -364,6 +369,9 @@
       getTransfusionData (productType, specialty, location, startDateText, endDateText) {
         const cmp = this
         return new Promise(function (resolve, reject) {
+          if (!cmp.$db) {
+            resolve([])
+          }
           const parameters = []
           if (productType !== 'ALL') {
             parameters.push(`t.product="${productType}"`)

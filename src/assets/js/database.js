@@ -1,6 +1,11 @@
 const sqlite3 = require('sqlite3').verbose()
+const fs = require('fs')
 
 module.exports.createDatabase = function (dbPath) {
+  if (fs.existsSync(dbPath)) {
+    return new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE)
+  }
+
   const db = new sqlite3.Database(dbPath)
   db.run(`
         CREATE TABLE IF NOT EXISTS specialty(
@@ -65,7 +70,9 @@ module.exports.createDatabase = function (dbPath) {
 }
 
 module.exports.createSettingsDatabase = function (dbPath) {
+  console.log('creating')
   const settingsDb = new sqlite3.Database(dbPath)
+  console.log('created')
   settingsDb.run(`
         CREATE TABLE IF NOT EXISTS database(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,4 +82,42 @@ module.exports.createSettingsDatabase = function (dbPath) {
         )
     `)
   return settingsDb
+}
+
+module.exports.addDatabasePath = function (settingsDbPath, dbPath) {
+  const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
+
+  settingsDb.run(`
+    UPDATE database SET selected=0 WHERE selected=1;
+  `)
+
+  settingsDb.run(`
+    INSERT INTO database (location, selected) VALUES ("${dbPath}", 1) ON CONFLICT (location) DO UPDATE SET selected=1;
+  `)
+
+  settingsDb.close((err) => {
+    if (err) { console.log(err) }
+  })
+}
+
+module.exports.getExistingDatabases = function (settingsDbPath) {
+  return new Promise((resolve, reject) => {
+    const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
+    const sql = 'SELECT * FROM database'
+    const databases = []
+    settingsDb.all(sql, function (err, rows) {
+      if (err) { }
+      rows.forEach(function (row) {
+        databases.push({
+          id: row.id,
+          location: row.location,
+          selected: row.selected,
+        })
+      })
+      resolve(databases)
+    })
+    settingsDb.close((err) => {
+      if (err) { console.log(err) }
+    })
+  })
 }

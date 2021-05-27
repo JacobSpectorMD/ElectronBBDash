@@ -211,7 +211,7 @@
 <style lang="sass">
   @import '~vuetify/src/styles/tools/_rtl.sass'
 
-  .v-navigation-drawer__content a:hover,
+  .v-navigation-drawer__content a,
   .v-navigation-drawer__content *
     outline-width: 0 !important
 
