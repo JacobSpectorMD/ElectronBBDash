@@ -8,7 +8,6 @@ import './plugins/vee-validate'
 import vuetify from './plugins/vuetify'
 import i18n from './i18n'
 import { ipcRenderer } from 'electron'
-import sqlite3 from 'sqlite3'
 
 Vue.config.productionTip = false
 
@@ -26,9 +25,7 @@ new Vue({
 
 ipcRenderer.on('getDatabase', function (e, dbPath, settingsDbPath) {
   if (dbPath) {
-    Vue.prototype.$db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE)
-  } else {
-    Vue.prototype.$db = null
+    store.commit('set_database_path', dbPath)
   }
   Vue.prototype.$settingsDbPath = settingsDbPath
 })

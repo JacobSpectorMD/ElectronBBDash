@@ -12,7 +12,7 @@
         class="card-heading"
       >
         <div class="text-h3 font-weight-light">
-          Settings
+          Databases
         </div>
         <div class="heading-buttons">
           <v-btn
@@ -56,15 +56,21 @@
           <tr
             v-for="database in databases"
             :key="database.id"
+            class="database-row"
           >
             <td
               v-if="database.selected"
             >
               <v-icon color="secondary">mdi-check-bold</v-icon>
             </td>
-            <td v-else></td>
-            <td>{{ database.location }}</td>
-            <td>
+            <td
+              v-else
+              @click="setActive(database)"
+            ></td>
+            <td @click="setActive(database)">{{ database.location }}</td>
+            <td
+              class="remove-td"
+            >
               <v-icon
                 color="secondary"
                 @click="showDeleteDialog(database)"
@@ -96,12 +102,19 @@
           <div class="section-header">Remove Database</div>
           <div class="delete-text">Removing the database means that it will no longer show up on the list of databases. However, the actual
             database file will not be deleted.</div>
-          <v-btn color="secondary">Remove Database</v-btn>
+          <v-btn
+            color="secondary"
+            @click="removeDatabase"
+          >Remove Database</v-btn>
         </div>
         <div>
           <div class="section-header">Delete Database</div>
-          <div class="delete-text">Deleting the database will delete the database file and remove it from the list of databases. Warning: All data in the
-            database will be lost!</div>
+          <div class="delete-text">Deleting the database will delete the database file and remove it from the list of databases.
+            This should be done if you plan on decrypting the computer the file is stored on.
+            <span
+              class="red--text text--darken-2 font-weight-bold"
+            >Warning:</span> All data in the selected database file will be lost!
+          </div>
           <v-btn
             color="primary"
             @click="showDeleteConfirmDialog"
@@ -109,6 +122,7 @@
         </div>
       </v-card>
     </v-dialog>
+
     <v-dialog
       v-model="deleteConfirmDialog"
       max-width="500"
@@ -130,10 +144,12 @@
         <div class="justify-end flex-row">
           <v-btn
             color="secondary"
+            @click="deleteConfirmDialog = false"
           >Cancel</v-btn>
           <v-btn
             :disabled="!confirmTextMatches"
             color="primary"
+            @click="deleteDatabase"
           >Delete</v-btn>
         </div>
       </v-card>
@@ -144,7 +160,6 @@
 <script>
   const db = require('../../../assets/js/database')
   const { dialog } = require('electron').remote
-  // const fs = require('fs')
 
   export default {
     name: 'Settings.vue',
@@ -162,7 +177,6 @@
         return this.deleteConfirmText === this.selectedDatabaseLocation
       },
       selectedDatabaseLocation () {
-        console.log('updaint location')
         return (this.selectedDatabase) ? this.selectedDatabase.location : ''
       },
     },
@@ -177,40 +191,72 @@
         dialog.showSaveDialog(null).then((result) => {
           if (result.filePath && result.filePath !== '') {
             db.createDatabase(result.filePath)
-            console.log(cmp.$settingsDb)
-            db.addDatabasePath(cmp.$settingsDbPath, result.filePath)
+            db.addDatabasePath(cmp.$settingsDbPath, result.filePath).then((result) => {
+              console.log('added database path', result)
+              cmp.databases.push(result)
+            })
           }
         })
       },
-      loadExistingDatabase () {
-        const cmp = this
-        dialog.showOpenDialog(null).then((result) => {
-          result.filePaths.forEach(function (filePath) {
-            db.addDatabasePath(cmp.$settingsDbPath, filePath)
-          })
-        })
-        cmp.databases.length = 0
-        cmp.getExistingDatabases()
+      deleteDatabase () {
+        const database = { ...this.selectedDatabase }
+        this.removeDatabase()
+        db.deleteDatabase(this.$settingsDbPath, database.location)
+        this.deleteConfirmDialog = false
+        this.deleteConfirmText = ''
       },
       getExistingDatabases () {
         // Gets the list of transfusion databases from the settingsDb
         const cmp = this
+        console.log('getExistingDatabases', cmp.$settingsDbPath)
         db.getExistingDatabases(cmp.$settingsDbPath).then(function (databases) {
           databases.forEach(function (database) {
             cmp.databases.push(database)
           })
         })
       },
+      loadExistingDatabase () {
+        const cmp = this
+        const existingFilepaths = this.databases.map(database => database.location)
+        dialog.showOpenDialog(null).then((result) => {
+          result.filePaths.forEach(function (filePath) {
+            if (existingFilepaths.includes(filePath)) { return }
+            db.addDatabasePath(cmp.$settingsDbPath, filePath).then((database) => {
+              cmp.databases.forEach(function (database) {
+                database.selected = false
+              })
+              cmp.databases.push(database)
+            })
+          })
+        })
+        cmp.databases.length = 0
+        cmp.getExistingDatabases()
+      },
+      removeDatabase () {
+        db.removeDatabase(this.$settingsDbPath, this.selectedDatabase.id).then((deleted) => {
+          if (deleted) {
+            const index = this.databases.findIndex(item => item.id === this.selectedDatabase.id)
+            this.databases.splice(index, 1)
+          }
+          this.deleteDialog = false
+          this.selectedDatabase = null
+        })
+      },
+      setActive (database) {
+        const cmp = this
+        this.databases.forEach(function (database) {
+          database.selected = false
+        })
+        db.setActiveDatabase(cmp, this.$settingsDbPath, database)
+        database.selected = true
+      },
       showDeleteConfirmDialog () {
         this.deleteDialog = false
         this.deleteConfirmDialog = true
       },
       showDeleteDialog (database) {
-        console.log(database)
         this.selectedDatabase = database
         this.deleteDialog = true
-      },
-      removeDatabase (databaseId) {
       },
     },
   }
@@ -242,6 +288,9 @@
   .delete-card > div button {
     align-self: flex-end;
   }
+  .delete-text {
+    margin-bottom: 8px;
+  }
   #delete-cancel {margin-top: 8px;}
   #delete-x {
     position: absolute;
@@ -267,5 +316,9 @@
   }
 
   #confirm-buttons {
+  }
+
+  .database-row > td:not(.remove-td) {
+    cursor: pointer;
   }
 </style>

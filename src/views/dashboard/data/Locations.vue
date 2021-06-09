@@ -97,10 +97,14 @@
     methods: {
       getLocationData () {
         const cmp = this
-        cmp.locations.length = 0
+        cmp.locations = []
+
+        const db = this.$store.state.database
+        console.log('DB', db)
         const sql = 'SELECT * FROM location ORDER BY code ASC'
-        this.$db.all(sql, function (err, rows) {
+        db.all(sql, function (err, rows) {
           if (err) { }
+          console.log(rows)
           rows.forEach(function (row) {
             cmp.locations.push({ code: row.code })
           })
@@ -108,10 +112,14 @@
       },
       submitInput () {
         const cmp = this
-        addLocationsToDatabase(cmp.$db, cmp.locationInput)
+        const database = cmp.$store.state.database
+        addLocationsToDatabase(database, cmp.locationInput)
         cmp.locationInput = ''
         cmp.getLocationData()
       },
+    },
+    activated () {
+      this.getLocationData()
     },
     mounted () {
       this.getLocationData()

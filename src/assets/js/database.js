@@ -59,6 +59,7 @@ module.exports.createDatabase = function (dbPath) {
             indicated TEXT,
             location TEXT,
             location_id INTEGER,
+            mrn INTEGER,
             provider TEXT,
             provider_id INTEGER,
             FOREIGN KEY(location_id) REFERENCES location(id),
@@ -84,7 +85,28 @@ module.exports.createSettingsDatabase = function (dbPath) {
   return settingsDb
 }
 
-module.exports.addDatabasePath = function (settingsDbPath, dbPath) {
+module.exports.addDatabasePath = async function (settingsDbPath, dbPath) {
+  return new Promise((resolve, reject) => {
+    const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
+
+    settingsDb.run(`
+        UPDATE database SET selected=0 WHERE selected=1;
+    `)
+
+    settingsDb.run(`
+      INSERT INTO database (location, selected) VALUES ("${dbPath}", 1) ON CONFLICT (location) DO UPDATE SET selected=1;
+    `)
+
+    const sql = `SELECT * FROM database WHERE location="${dbPath}"`
+    settingsDb.get(sql, function (err, row) {
+      if (err) { console.log(err) }
+      closeDatabase(settingsDb)
+      resolve(row)
+    })
+  })
+}
+
+module.exports.setActiveDatabase = function (component, settingsDbPath, database) {
   const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
 
   settingsDb.run(`
@@ -92,12 +114,9 @@ module.exports.addDatabasePath = function (settingsDbPath, dbPath) {
   `)
 
   settingsDb.run(`
-    INSERT INTO database (location, selected) VALUES ("${dbPath}", 1) ON CONFLICT (location) DO UPDATE SET selected=1;
+    UPDATE database SET selected=1 WHERE id=${database.id};
   `)
-
-  settingsDb.close((err) => {
-    if (err) { console.log(err) }
-  })
+  component.$store.commit('set_database_path', database.location)
 }
 
 module.exports.getExistingDatabases = function (settingsDbPath) {
@@ -116,8 +135,58 @@ module.exports.getExistingDatabases = function (settingsDbPath) {
       })
       resolve(databases)
     })
-    settingsDb.close((err) => {
-      if (err) { console.log(err) }
+    closeDatabase(settingsDb)
+  })
+}
+
+function closeDatabase (database) {
+  database.close((err) => {
+    if (err) { console.log(err) }
+  })
+}
+
+// Removes the database file from the settings database, but does not delete the file
+function removeDatabase (settingsDbPath, databaseId) {
+  return new Promise((resolve, reject) => {
+    const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
+    const sql = `DELETE FROM database WHERE id=${databaseId}`
+    settingsDb.run(sql, function (err, row) {
+      closeDatabase(settingsDb)
+      if (err) {
+        reject(err)
+      } else {
+        resolve(true)
+      }
     })
   })
 }
+
+// Removes the database file from the settings database, but does not delete the file
+module.exports.deleteDatabase = function (settingsDbPath, databaseLocation) {
+  try {
+    fs.unlinkSync(databaseLocation)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+function removeNonexistentDatabases (settingsDbPath) {
+  return new Promise((resolve, reject) => {
+    const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
+    const sql = 'SELECT * FROM database'
+    settingsDb.all(sql, function (err, rows) {
+      if (err) { reject(err) }
+
+      rows.forEach(function (row) {
+        if (!fs.existsSync(row.location)) {
+          removeDatabase(settingsDbPath, row.id)
+        }
+      })
+      resolve(true)
+    })
+  })
+}
+
+module.exports.closeDatabase = closeDatabase
+module.exports.removeDatabase = removeDatabase
+module.exports.removeNonexistentDatabases = removeNonexistentDatabases

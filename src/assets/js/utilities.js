@@ -2,8 +2,9 @@
 
 const sunquest_ = require('./sunquest.js')
 
-export default function processFile (db, file) {
-  sunquest_.process(db, file)
+export default async function processFile (db, file) {
+  const result = await sunquest_.process(db, file)
+  return result
 }
 
 function parseTabbedTransfusion(line){

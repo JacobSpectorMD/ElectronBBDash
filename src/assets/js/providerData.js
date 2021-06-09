@@ -16,6 +16,7 @@ export function addProvidersToDatabase (db, providerInput) {
     const providerList = []
     for (let i = 0; i < enteredProviders.length; i++) {
       const col = enteredProviders[i].trim().split('\t')
+
       const p = {} // Provider
       p.firstName = col[0].trim()
       p.middleName = col[1].trim()

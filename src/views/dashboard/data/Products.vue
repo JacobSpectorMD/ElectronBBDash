@@ -94,10 +94,11 @@
     },
     methods: {
       getProductData () {
-        this.products.length = 0
+        this.products = []
         const cmp = this
+        const database = cmp.$store.state.database
         const sql = 'SELECT * FROM product ORDER BY code ASC'
-        this.$db.all(sql, function (err, rows) {
+        database.all(sql, function (err, rows) {
           if (err) { }
           rows.forEach(function (row) {
             cmp.products.push({ code: row.code, product_type: row.product_type })
@@ -106,10 +107,14 @@
       },
       submitInput () {
         const cmp = this
-        addProductsToDatabase(cmp.$db, cmp.productInput)
+        const database = cmp.$store.getters.database
+        addProductsToDatabase(database, cmp.productInput)
         cmp.productInput = ''
         cmp.getProductData()
       },
+    },
+    activated () {
+      this.getProductData()
     },
     mounted () {
       this.getProductData()

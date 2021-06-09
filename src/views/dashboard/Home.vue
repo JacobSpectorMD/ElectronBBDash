@@ -1,12 +1,12 @@
 <template>
-  <v-app>
+  <v-content>
     <dashboard-core-app-bar />
 
     <dashboard-core-drawer />
 
     <dashboard-core-view />
 
-  </v-app>
+  </v-content>
 </template>
 
 <script>

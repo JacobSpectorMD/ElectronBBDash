@@ -96,9 +96,10 @@
     methods: {
       getSpecialtyData () {
         const cmp = this
-        cmp.specialties.length = 0
+        const database = cmp.$store.state.database
+        cmp.specialties = []
         const sql = 'SELECT * FROM specialty ORDER BY name ASC'
-        this.$db.all(sql, function (err, rows) {
+        database.all(sql, function (err, rows) {
           if (err) { }
           rows.forEach(function (row) {
             cmp.specialties.push({
@@ -123,6 +124,9 @@
         cmp.specialtyInput = ''
         cmp.getSpecialtyData()
       },
+    },
+    activated () {
+      this.getSpecialtyData()
     },
     mounted () {
       this.getSpecialtyData()

@@ -9,7 +9,7 @@ const { saveAs } = require('./FileSaver.js')
 const darkRed = '#650827'
 const darkGreen = '#4c6b7f'
 
-export default function addSwarm (transfusionData, productType, divId) {
+export default function addSwarm (transfusionData, productType, divId, log) {
   let binValues = []
   let xText = ''
   if (productType === 'PLATELETS') {
@@ -60,12 +60,12 @@ export default function addSwarm (transfusionData, productType, divId) {
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
     .on('click', function (e) {
-      console.log('click')
+      // console.log('click')
       var tickSpacing = xVisual(bins[1].x1) - xVisual(bins[1].x0)
 
       if (selectLines < 2) {
         var xCoord = e.offsetX
-        console.log(xCoord)
+        // console.log(xCoord)
 
         // Find the closest bin value
         var current = binValues[0]
@@ -131,7 +131,10 @@ export default function addSwarm (transfusionData, productType, divId) {
             .attr('id', 'save_text')
             .attr('font-family', 'sans-serif')
             .style('text-anchor', 'middle')
-          console.log(selectedUnits)
+          // console.log(selectedUnits)
+          $(svg).data('selectedUnits', selectedUnits)
+          // console.log($(svg).data('selectedUnits'))
+          log(selectedUnits)
           $('#saveButton').on('click', function () { saveSelection(selectVals, selectedUnits) })
           $('#save_text').on('click', function () { saveSelection(selectVals, selectedUnits) })
 
@@ -215,10 +218,7 @@ function drawDotChart (bins, margin, height, width, listLength, binValues, g, x,
       },
     )
 
-  var tip = d3.select('#' + divId).append('div')
-    .attr('class', 'tooltip')
-    .attr('id', divId + '-tool-tip')
-    .style('opacity', 0)
+  var tip = d3.select('#' + divId + ' .toolTip')
 
   circleG.selectAll('circle')
     .data(d => d.map((p, i) => {
@@ -257,6 +257,7 @@ function drawDotChart (bins, margin, height, width, listLength, binValues, g, x,
       tip.transition()
         .duration(500)
         .style('opacity', 0)
+        .style('pointer-events', 'none')
     })
 
   g.append('g')

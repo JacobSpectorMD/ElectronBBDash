@@ -77,24 +77,25 @@ const fs = require('fs')
 const db = require('./assets/js/database.js')
 
 ipcMain.on('getDatabase', function (e) {
+  // Open the settings database
   const settingsDbPath = path.join(app.getPath('userData'), 'settings.db')
-  console.log(fs.existsSync(settingsDbPath))
   if (!fs.existsSync(settingsDbPath)) {
     db.createSettingsDatabase(settingsDbPath)
   }
   const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
 
-  console.log('settingsdb', settingsDb)
-  getDbLocation(settingsDb).then(row => {
-    if (row) {
-      win.webContents.send('getDatabase', row.location, settingsDbPath)
-    } else {
-      win.webContents.send('getDatabase', null, settingsDbPath)
-    }
-  })
-
-  settingsDb.close((err) => {
-    if (err) { console.log(err) }
+  // Get the location of the transfusion database
+  db.removeNonexistentDatabases(settingsDbPath).then(() => {
+    getDbLocation(settingsDb).then(row => {
+      if (row) {
+        win.webContents.send('getDatabase', row.location, settingsDbPath)
+      } else {
+        win.webContents.send('getDatabase', null, settingsDbPath)
+      }
+      settingsDb.close((err) => {
+        if (err) { console.log(err) }
+      })
+    })
   })
 })
 

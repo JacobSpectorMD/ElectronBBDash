@@ -156,11 +156,11 @@
         </base-material-card>
       </v-col>
     </v-row>
-
+    <router-view />
     <v-row>
       <v-col v-show="!provider">
         <product-graph
-          v-for="graph in graphs"
+          v-for="graph in graphsBeingViewed"
           :id="graph.id"
           :key="graph.productType + graph.time"
           :graph-label="graph.graphLabel"
@@ -169,8 +169,11 @@
           :transfusions="graph.transfusions"
           :anonymous="anonymous"
           :specialty="specialty"
+          :graphType="graphType"
           @sentProviderInfo="showProviderInfo"
+          @showSelectedUnits="showSelectedUnits"
           @specialtyComparison="specialtyComparison"
+          @backToAllProviders="graphType = 'Providers'"
           color="#687A85"
         />
       </v-col>
@@ -180,6 +183,12 @@
           @hide-provider-stats="hideProviderInfo"
         />
       </v-col>
+      <v-col v-if="selectedUnits && graphType==='selected'">
+        <selected-units
+          :units="selectedUnits"
+        >
+        </selected-units>
+      </v-col>
     </v-row>
   </v-container>
 </template>
@@ -188,10 +197,12 @@
   // import $ from 'jquery'
   import ProductGraph from '@/views/dashboard/graphs/ProductGraph'
   import ProviderStats from '@/views/dashboard/components/ProviderStats'
+  import SelectedUnits from '@/views/dashboard/tables/SelectedUnits'
 
   export default {
     name: 'Graphs',
     components: {
+      SelectedUnits,
       'product-graph': ProductGraph,
       'provider-stats': ProviderStats,
     },
@@ -202,6 +213,7 @@
         graphIds: [0, 1, 2],
         graphs: [],
         graphMode: 'Products',
+        graphType: 'Products',
         index: 0,
         locations: [],
         menu: false,
@@ -233,6 +245,7 @@
         provider: null,
         selectedLocation: '',
         selectedSpecialty: '',
+        selectedUnits: null,
         specialty: '',
         specialties: [],
         startDate: '',
@@ -243,15 +256,18 @@
     },
     computed: {
       getProducts () {
-        const cmp = this
-        return this.products.filter(product => product[cmp.graphMode] !== false)
+        return this.products.filter(product => product[this.graphMode] !== false)
+      },
+      graphsBeingViewed () {
+        return this.graphs.filter(graph => graph.type === this.graphType)
       },
     },
     mounted () {
       const cmp = this
-      if (this.locations.length === 0 && cmp.$db) {
+      const database = cmp.$store.state.database
+      if (this.locations.length === 0 && database) {
         const sql = 'SELECT * FROM location ORDER BY code ASC'
-        this.$db.all(sql, function (err, rows) {
+        database.all(sql, function (err, rows) {
           if (err) { }
           rows.forEach(function (row) {
             cmp.locations.push(row.code)
@@ -259,9 +275,9 @@
         })
       }
 
-      if (this.specialties.length === 0 && cmp.$db) {
+      if (this.specialties.length === 0 && database) {
         const sql = 'SELECT * FROM specialty ORDER BY name ASC'
-        this.$db.all(sql, function (err, rows) {
+        database.all(sql, function (err, rows) {
           if (err) { }
           rows.forEach(function (row) {
             cmp.specialties.push(row.name)
@@ -271,7 +287,9 @@
     },
     methods: {
       clearGraphs () {
-        this.graphs.length = 0
+        // this.graphs.length = 0
+        this.graphs = this.graphs.filter(graph => graph.type !== this.graphType)
+        console.log(this.graphType, this.graphs)
         this.provider = null
         this.unfilteredTransfusionData.length = 0
       },
@@ -301,8 +319,9 @@
               return
             }
             cmp.graphs.push({
-              id: product.value.replace(' ', ''),
+              id: cmp.view + '-' + product.value.replace(' ', ''),
               time: new Date().toISOString(),
+              type: cmp.graphType,
               productType: product.value,
               graphLabel: product.label,
               transfusions: rows.filter(row => row.product === product.value),
@@ -311,8 +330,9 @@
         } else {
           const product = cmp.products.find(product => product.value === productType)
           cmp.graphs.push({
-            id: product.value.replace(' ', ''),
+            id: cmp.view + '-' + product.value.replace(' ', ''),
             time: new Date().toISOString(),
+            type: cmp.graphType,
             productType: product.value,
             graphLabel: product.label,
             transfusions: rows.filter(row => row.product === product.value),
@@ -321,7 +341,8 @@
       },
       setGraphMode (mode) {
         this.graphMode = mode
-        if (mode === 'Products' && this.productType === '') {
+        this.graphType = mode
+        if (mode === 'Products' && this.productType === 'CRYOPPT') {
           this.productType = 'ALL'
         } else if (mode === 'Providers' && this.productType === 'ALL') {
           this.productType = 'CRYOPPT'
@@ -333,24 +354,29 @@
         }
         this.provider = providerData
       },
+      showSelectedUnits (units) {
+        console.log('showSelectedUnits', units)
+        this.selectedUnits = units
+      },
       specialtyComparison (specialty) {
         this.specialty = specialty
+        this.graphType = 'specialty'
         this.submitGraph('specialtyComparison')
       },
       hideProviderInfo () {
         this.provider = null
       },
       getProviderTransfusions (providerName) {
-        const cmp = this
+        const database = this.$store.state.database
         return new Promise(function (resolve, reject) {
           const sql = 'SELECT *  FROM transfusion AS t INNER JOIN provider AS p ON p.id=t.provider_id WHERE p.provider_name=' + providerName
           const testDict = { fib: 'Fibrinogen', pro: 'PT', hgb: 'Hemoglobin', plt: 'Platelets' }
 
-          if (!cmp.$db) {
+          if (!database) {
             resolve([])
           }
 
-          cmp.$db.all(sql, function (err, rows) {
+          database.all(sql, function (err, rows) {
             if (err) {
               console.log(err)
             }
@@ -367,9 +393,9 @@
         })
       },
       getTransfusionData (productType, specialty, location, startDateText, endDateText) {
-        const cmp = this
+        const database = this.$store.state.database
         return new Promise(function (resolve, reject) {
-          if (!cmp.$db) {
+          if (!database) {
             resolve([])
           }
           const parameters = []
@@ -398,7 +424,7 @@
             const endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
             parameters.push(`t.time<=${endDate.getTime()}`)
           }
-          let sql = 'SELECT *  FROM transfusion AS t INNER JOIN provider AS p ON p.id=t.provider_id'
+          let sql = 'SELECT *, t.id as transfusion_id FROM transfusion AS t INNER JOIN provider AS p ON p.id=t.provider_id'
           for (let i = 0; i < parameters.length; i++) {
             if (i === 0) {
               sql += ' WHERE ' + parameters[i]
@@ -407,7 +433,7 @@
             }
           }
           const testDict = { fib: 'Fibrinogen', pro: 'PT', hgb: 'Hemoglobin', plt: 'Platelets' }
-          cmp.$db.all(sql, function (err, rows) {
+          database.all(sql, function (err, rows) {
             if (err) {
               console.log(err)
             }

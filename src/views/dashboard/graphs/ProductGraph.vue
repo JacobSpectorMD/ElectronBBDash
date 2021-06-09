@@ -18,6 +18,17 @@
       </div>
       <div class="heading-buttons">
         <v-btn
+          v-show="graphType == 'specialty'"
+          elevation="0"
+          class="heading-button"
+          @click="backToAllProviders"
+        >
+          <v-icon class="mr-2">
+            mdi-arrow-left-circle
+          </v-icon>
+          Back To All Providers
+        </v-btn>
+        <v-btn
           v-show="view === 'median'"
           elevation="0"
           class="heading-button"
@@ -48,28 +59,38 @@
       <div
         class="toolTip"
       >
-        <div class="stats"></div>
-        <div class="button-div">
-          <v-btn
-            elevation="0"
-            class="specialty-comparison-button secondary--text"
-            @click="specialtyComparison"
-            color="white"
-          >
-            Specialty Comparison
-          </v-btn>
-          <v-btn
-            elevation="0"
-            class="show-provider-button"
-            @click="emitProviderInfo"
-            color="white"
-          >
-            View Provider's Transfusions
-          </v-btn>
+        <div
+          v-show="mode === 'Providers'"
+        >
+          <div class="stats"></div>
+          <div class="button-div">
+            <v-btn
+              v-show="graphType !== 'specialty'"
+              elevation="0"
+              class="specialty-comparison-button secondary--text"
+              @click="specialtyComparison"
+              color="white"
+            >
+              Specialty Comparison
+            </v-btn>
+            <v-btn
+              elevation="0"
+              class="show-provider-button"
+              @click="emitProviderInfo"
+              color="white"
+            >
+              View Provider's Transfusions
+            </v-btn>
+          </div>
+        </div>
+        <div
+          v-show="mode === 'Products'"
+        >
         </div>
       </div>
       <svg
         @click="setProvider"
+        ref="graphSvg"
         :class="'providersSvg ' + view"
       ></svg>
     </div>
@@ -95,6 +116,9 @@
       graphLabel: {
         type: String,
         required: true,
+      },
+      graphType: {
+        type: String,
       },
       mode: {
         type: String,
@@ -122,15 +146,21 @@
     },
     mounted () {
       if (this.mode === 'Products') {
-        addSwarm(this.transfusions, this.productType, this.id)
+        addSwarm(this.transfusions, this.productType, this.id, this.log)
       } else if (this.mode === 'Providers') {
         if (this.view === '') { this.view = 'median' }
-        createProviderGraph(this.$db, this.transfusions, this.productType, this.anonymous, this.id)
+        createProviderGraph(this.$store.state.database, this.transfusions, this.productType, this.anonymous, this.id)
       }
     },
     methods: {
+      backToAllProviders () {
+        this.$emit('backToAllProviders')
+      },
       hideTooltip () {
         $('#' + this.id + ' .toolTip').css('opacity', '0').css('pointer-events', 'none')
+      },
+      log (data) {
+        this.$emit('showSelectedUnits', data)
       },
       setView (view) {
         const cmp = this
@@ -142,7 +172,9 @@
         this.providerData = e.target.__data__
       },
       specialtyComparison () {
-        this.$emit('specialtyComparison', this.providerData[1].specialty)
+        if (this.providerData[1].specialty) {
+          this.$emit('specialtyComparison', this.providerData[1].specialty)
+        }
       },
       emitProviderInfo (e) {
         this.$emit('sentProviderInfo', this.providerData[1])
@@ -164,6 +196,7 @@
   .svg-div {
     overflow-x: auto;
   }
+
   .toolTip {
     opacity: 0;
     position: absolute;

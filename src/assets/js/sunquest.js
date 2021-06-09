@@ -160,44 +160,79 @@ function strip(str){
 
 var location_dict, patient_list, patient_dict, provider_dict, product_dict;
 
-module.exports.process = function process(db, file){
+module.exports.process = async function process(db, file) {
+  try {
     location_dict = {}, patient_list = [], patient_dict = {}, provider_dict = {}, product_dict = {};
-    read_data_dict(db)
-        .then((result) => {
-            let values = determine_file_type(file);
-            var file_type = values[0],
-                lines = values[1];
-            if (file_type == "utilization"){
-                read_utilization_report(lines);
-                replace_test_codes();
-                find_most_recent_tests();
-                add_units_per_day();
-                utilization_data_to_db(db);
-            } else if (file_type == "location"){
-                let units;
-                read_location_report(db, file)
-                    .then(function(result){
-                        add_providers_to_db(db, result.providers);
-                        add_locations_to_db(db, result.locations);
-                        add_products_to_db(db, result.products);
-                        units = result.units;
-                    })
-                    .then(() => {
-                        read_data_dict(db).then((data) => {
-                            let providers = data.providers;
-                            let locations = data.locations;
-
-                            units.forEach(function(unit){
-                                unit.provider_id = providers[unit.provider_name].id;
-                                if (unit.location_code){unit.location_id = locations[unit.location_code].id;}
-                            })
-                            add_units_to_db(db, units);
-                        })
-                    })
-            }
-            location_dict = {}, patient_list = [], patient_dict = {}, provider_dict = {}, product_dict = {};
-        });
+    const result = await read_data_dict(db)
+    let values = determine_file_type(file);
+    var file_type = values[0],
+        lines = values[1];
+    if (file_type == "utilization"){
+      read_utilization_report(lines);
+      replace_test_codes();
+      find_most_recent_tests();
+      add_units_per_day();
+      utilization_data_to_db(db);
+      return true
+    } else if (file_type == "location") {
+      const locationReportData = await read_location_report(db, file)
+      await add_providers_to_db(db, result.providers);
+      await add_locations_to_db(db, result.locations);
+      await add_products_to_db(db, result.products);
+      const units = locationReportData.units;
+      const data = await read_data_dict(db)
+      let providers = data.providers
+      let locations = data.locations
+      units.forEach(function(unit){
+        unit.provider_id = providers[unit.provider_name].id;
+        if (unit.location_code){unit.location_id = locations[unit.location_code].id;}
+      })
+      await add_units_to_db(db, units);
+      return true
+    }
+  } catch (error) {
+    return false
+  }
 }
+
+// module.exports.process = async function process(db, file){
+//     location_dict = {}, patient_list = [], patient_dict = {}, provider_dict = {}, product_dict = {};
+//     read_data_dict(db)
+//         .then((result) => {
+//             let values = determine_file_type(file);
+//             var file_type = values[0],
+//                 lines = values[1];
+//             if (file_type == "utilization"){
+//                 read_utilization_report(lines);
+//                 replace_test_codes();
+//                 find_most_recent_tests();
+//                 add_units_per_day();
+//                 utilization_data_to_db(db);
+//             } else if (file_type == "location"){
+//                 let units;
+//                 read_location_report(db, file)
+//                     .then(function(result){
+//                         add_providers_to_db(db, result.providers);
+//                         add_locations_to_db(db, result.locations);
+//                         add_products_to_db(db, result.products);
+//                         units = result.units;
+//                     })
+//                     .then(() => {
+//                         read_data_dict(db).then((data) => {
+//                             let providers = data.providers;
+//                             let locations = data.locations;
+//
+//                             units.forEach(function(unit){
+//                                 unit.provider_id = providers[unit.provider_name].id;
+//                                 if (unit.location_code){unit.location_id = locations[unit.location_code].id;}
+//                             })
+//                             add_units_to_db(db, units);
+//                         })
+//                     })
+//             }
+//             location_dict = {}, patient_list = [], patient_dict = {}, provider_dict = {}, product_dict = {};
+//         });
+// }
 
 function determine_file_type(file){
     let lines = fs.readFileSync(file.path, "utf8");
@@ -211,20 +246,21 @@ function determine_file_type(file){
 }
 
 function utilization_data_to_db(db){
-    let sql = `INSERT INTO transfusion (time, date, din, accession, num_units, product, units_on_day, test_type, test_result, test_accession, test_time, indicated) VALUES `;
+    let sql = `INSERT INTO transfusion (time, date, mrn, din, accession, num_units, product, units_on_day, test_type, test_result, test_accession, test_time, indicated) VALUES `;
     for (var MRN in patient_dict){
         let patient = patient_dict[MRN];
         patient.transfusions.forEach(function(trfn){
+            let unit_mrn = patient.MRN;
             let time = trfn.u_time.getTime();
             let date = trfn.u_date.getTime();
             let test_time = (trfn.t_time == "no recent test") ? -1 : trfn.t_time.getTime();
             if (trfn.t_value == undefined || trfn.t_value == "none"){trfn.t_value=-1};
-            let values = `(${time}, ${date}, "${trfn.DIN}", "${trfn.u_acc}", ${trfn.num_units}, "${trfn.u_product}", ${trfn.units_on_day}, "${trfn.t_test}", ${trfn.t_value}, "${trfn.t_acc}", ${test_time}, "${trfn.indic}"), `;
+            let values = `(${time}, ${date}, ${unit_mrn}, "${trfn.DIN}", "${trfn.u_acc}", ${trfn.num_units}, "${trfn.u_product}", ${trfn.units_on_day}, "${trfn.t_test}", ${trfn.t_value}, "${trfn.t_acc}", ${test_time}, "${trfn.indic}"), `;
             sql += values;
         })
     }
     sql = sql.replace(/.{2}$/, "");
-    sql += ` ON CONFLICT(date, din, accession) DO UPDATE SET time=excluded.time,  num_units=excluded.num_units, product=excluded.product, units_on_day=excluded.units_on_day, test_type=excluded.test_type, test_result=excluded.test_result, test_accession=excluded.test_accession, test_time=excluded.test_time, indicated=excluded.indicated;`;
+    sql += ` ON CONFLICT(date, din, accession) DO UPDATE SET time=excluded.time,  mrn=excluded.mrn, num_units=excluded.num_units, product=excluded.product, units_on_day=excluded.units_on_day, test_type=excluded.test_type, test_result=excluded.test_result, test_accession=excluded.test_accession, test_time=excluded.test_time, indicated=excluded.indicated;`;
     db.run(sql, function(err){if(err){console.log(err)}});
 }
 

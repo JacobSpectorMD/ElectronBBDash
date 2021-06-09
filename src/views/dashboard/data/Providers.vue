@@ -115,9 +115,11 @@
     methods: {
       getProviderData () {
         const cmp = this
-        cmp.providers.length = 0
+        const database = cmp.$store.state.database
+        console.log('getPRoviderData', database)
+        cmp.providers = []
         const sql = 'SELECT * FROM provider ORDER BY last_name ASC'
-        this.$db.all(sql, function (err, rows) {
+        database.all(sql, function (err, rows) {
           if (err) { }
           rows.forEach(function (row) {
             cmp.providers.push({
@@ -130,13 +132,14 @@
         })
       },
       submitInput () {
-        const cmp = this
-        addProvidersToDatabase(cmp.$db, cmp.providerInput)
-        cmp.locationInput = ''
-        cmp.getProviderData()
+        const database = this.$store.state.database
+        console.log(database, this.providerInput)
+        addProvidersToDatabase(database, this.providerInput)
+        this.locationInput = ''
+        this.getProviderData()
       },
     },
-    mounted () {
+    activated () {
       this.getProviderData()
     },
   }

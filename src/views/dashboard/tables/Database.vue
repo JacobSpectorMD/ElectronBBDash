@@ -38,6 +38,36 @@
           </div>
         </label>
       </div>
+
+      <v-simple-table
+        v-show="processingFiles.length > 0"
+        fixed-header
+        height="200px"
+      >
+        <thead>
+          <tr>
+            <th class="primary--text">
+              Status
+            </th>
+            <th class="primary--text">
+              File
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr
+            v-for="(file, index) in processingFiles"
+            :key="index"
+            class="file-row"
+          >
+            <td v-if="file.processed == 'failed'"><v-icon color="primary">mdi-image-broken</v-icon> Failed</td>
+            <td v-else-if="file.processed"><v-icon color="secondary">mdi-check-bold</v-icon> Complete</td>
+            <td v-else><v-icon color="secondary">mdi-timer-sand</v-icon> Processing</td>
+            <td>{{ file.path }}</td>
+          </tr>
+        </tbody>
+      </v-simple-table>
     </base-material-card>
 
     <base-material-card
@@ -99,12 +129,16 @@
   export default {
     data () {
       return {
+        database: null,
         filelist: [],
+        processingFiles: [],
         transfusions: [],
       }
     },
-    mounted () {
-      if (this.transfusions.length === 0) {
+    activated () {
+      if (this.database !== this.$store.state.database) {
+        this.processingFiles.splice(0)
+        this.database = this.$store.state.database
         this.showTransfusionCalendar()
       }
     },
@@ -120,30 +154,35 @@
         this.onChange() // Trigger the onChange event manually
       },
       onChange () {
+        const database = this.$store.state.database
         this.filelist = [...this.$refs.file.files]
+        this.filelist.forEach((file) => {
+          this.processingFiles.push({ path: file.path, processed: false })
+        })
         for (const f of this.filelist) {
-          processFile(this.$db, f)
+          processFile(database, f).then(result => {
+            if (result) {
+              this.processingFiles.forEach(file => {
+                if (file.path === f.path) { file.processed = true }
+              })
+            } else {
+              this.processingFiles.forEach(file => {
+                if (file.path === f.path) { file.processed = 'failed' }
+              })
+            }
+          })
         }
         this.filelist = []
       },
       processFiles (e) {
         console.log(e)
       },
-      showDatabase () {
-        this.transfusions = [
-          {
-            year: 2018,
-            months: {
-              0: 100,
-              1: 200,
-            },
-          },
-        ]
-      },
       showTransfusionCalendar () {
-        const component = this
+        this.transfusions.splice(0)
+        const cmp = this
+        const database = cmp.$store.state.database
         const sql = 'SELECT * FROM transfusion ORDER BY time ASC'
-        this.$db.all(sql, function (err, rows) {
+        database.all(sql, function (err, rows) {
           const years = {}
           if (err) { }
           rows.forEach(function (row) {
@@ -160,7 +199,7 @@
             years[year].months[month] += 1
           })
           Object.values(years).forEach(function (year) {
-            component.transfusions.push(year)
+            cmp.transfusions.push(year)
           })
         })
       },
