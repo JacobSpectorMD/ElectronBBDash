@@ -18,6 +18,16 @@
           <v-btn
             elevation="0"
             class="heading-button"
+            @click="getExistingDatabases"
+          >
+            <v-icon class="mr-2">
+              mdi-refresh
+            </v-icon>
+            Refresh Databases
+          </v-btn>
+          <v-btn
+            elevation="0"
+            class="heading-button"
             @click="createNewDatabase"
           >
             <v-icon class="mr-2">
@@ -56,7 +66,7 @@
           <tr
             v-for="database in databases"
             :key="database.id"
-            class="database-row"
+            :class="getClass(database)"
           >
             <td
               v-if="database.selected"
@@ -67,7 +77,10 @@
               v-else
               @click="setActive(database)"
             ></td>
-            <td @click="setActive(database)">{{ database.location }}</td>
+            <td
+              @click="setActive(database)"
+              class="location-td"
+            >{{ database.location }}</td>
             <td
               class="remove-td"
             >
@@ -158,6 +171,7 @@
 </template>
 
 <script>
+  const fs = require('fs')
   const db = require('../../../assets/js/database')
   const { dialog } = require('electron').remote
 
@@ -205,12 +219,24 @@
         this.deleteConfirmDialog = false
         this.deleteConfirmText = ''
       },
+      getClass (database) {
+        let databaseClass = 'database-row'
+        if (!database.exists) {
+          databaseClass += ' does-not-exist'
+        }
+        return databaseClass
+      },
       getExistingDatabases () {
         // Gets the list of transfusion databases from the settingsDb
         const cmp = this
-        console.log('getExistingDatabases', cmp.$settingsDbPath)
+        cmp.databases = []
         db.getExistingDatabases(cmp.$settingsDbPath).then(function (databases) {
           databases.forEach(function (database) {
+            if (!fs.existsSync(database.location)) {
+              database.exists = false
+            } else {
+              database.exists = true
+            }
             cmp.databases.push(database)
           })
         })
@@ -243,6 +269,7 @@
         })
       },
       setActive (database) {
+        if (!database.exists) { return }
         const cmp = this
         this.databases.forEach(function (database) {
           database.selected = false
@@ -320,5 +347,13 @@
 
   .database-row > td:not(.remove-td) {
     cursor: pointer;
+  }
+
+  .database-row.does-not-exist td:not(.remove-td) {
+    cursor: not-allowed;
+  }
+
+  .database-row.does-not-exist .location-td {
+    text-decoration: line-through;
   }
 </style>

@@ -85,7 +85,7 @@ ipcMain.on('getDatabase', function (e) {
   const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
 
   // Get the location of the transfusion database
-  db.removeNonexistentDatabases(settingsDbPath).then(() => {
+  db.unselectNonexistentDatabases(settingsDbPath).then(() => {
     getDbLocation(settingsDb).then(row => {
       if (row) {
         win.webContents.send('getDatabase', row.location, settingsDbPath)

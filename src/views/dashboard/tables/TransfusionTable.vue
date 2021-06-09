@@ -7,6 +7,8 @@
     <selected-units
       :units="units"
       :search="true"
+      :checkboxes="true"
+      :loading="true"
     ></selected-units>
   </v-container>
 </template>
@@ -22,9 +24,9 @@
         units: [],
       }
     },
-    mounted () {
+    activated () {
       const cmp = this
-      this.getTransfusionData('ALL', '', '', '2021-04-01', '')
+      this.getTransfusionData('ALL', '', '', '', '')
         .then(function (rows) { rows.forEach((row) => cmp.units.push(row)) })
     },
     methods: {

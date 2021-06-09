@@ -49,6 +49,7 @@ module.exports.createDatabase = function (dbPath) {
             date INTEGER,
             din TEXT,
             accession TEXT,
+            checked INTEGER,
             num_units INTEGER,
             product TEXT,
             units_on_day INTEGER,
@@ -170,7 +171,7 @@ module.exports.deleteDatabase = function (settingsDbPath, databaseLocation) {
   }
 }
 
-function removeNonexistentDatabases (settingsDbPath) {
+function unselectNonexistentDatabases (settingsDbPath) {
   return new Promise((resolve, reject) => {
     const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
     const sql = 'SELECT * FROM database'
@@ -178,15 +179,14 @@ function removeNonexistentDatabases (settingsDbPath) {
       if (err) { reject(err) }
 
       rows.forEach(function (row) {
-        if (!fs.existsSync(row.location)) {
-          removeDatabase(settingsDbPath, row.id)
-        }
+        settingsDb.run(`
+          UPDATE database SET selected=0 WHERE id=${row.id}
+        `)
       })
-      resolve(true)
-    })
+    }).then(() => { resolve(true) })
   })
 }
 
 module.exports.closeDatabase = closeDatabase
 module.exports.removeDatabase = removeDatabase
-module.exports.removeNonexistentDatabases = removeNonexistentDatabases
+module.exports.unselectNonexistentDatabases = unselectNonexistentDatabases

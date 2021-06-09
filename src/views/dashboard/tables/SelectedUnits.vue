@@ -27,24 +27,38 @@
           v-else
           elevation="0"
           class="heading-button"
-          @click="hideProviderStats"
+          @click="back"
         >
           <v-icon class="mr-2">
             mdi-arrow-left-circle
           </v-icon>
-          Back To Providers Graph
+          {{ backText }}
         </v-btn>
       </div>
     </template>
     <v-card-text>
       <v-data-table
+        id="units-table"
+        v-model="checked"
+        @item-selected="handleCheck"
         :headers="headers"
         :items="items"
         item-key="transfusion_id"
         :search="searchTerm"
+        :show-select="checkboxes"
+        :loading="units.length === 0"
+        loading-text="Loading..."
       >
+        <template v-slot:item.data-table-select="{ item }">
+          <v-checkbox
+            :value="item.checked === 1"
+            :input-value="item.checked === 1"
+            color="secondary"
+            @click="handleSelect(item)"
+          ></v-checkbox>
+        </template>
         <template v-slot:item.product="{ item }">
-            {{ getProductName(item) }}
+          {{ getProductName(item) }}
         </template>
       </v-data-table>
     </v-card-text>
@@ -55,6 +69,18 @@
   export default {
     name: 'SelectedUnits',
     props: {
+      backText: {
+        type: String,
+        default: 'Back',
+      },
+      checkboxes: {
+        type: Boolean,
+        default: true,
+      },
+      loading: {
+        type: Boolean,
+        default: false,
+      },
       title: {
         type: String,
         required: false,
@@ -76,6 +102,7 @@
     },
     data () {
       return {
+        checked: [],
         headers: [
           {
             text: 'Provider',
@@ -128,6 +155,16 @@
       }
     },
     computed: {
+      computedHeaders: function () {
+        const compHeaders = [...this.headers]
+        if (this.checkboxes) {
+          compHeaders.unshift({
+            text: 'Checked',
+            sortable: true,
+          })
+        }
+        return compHeaders
+      },
       items: function () {
         return this.units.map(unit => ({
           ...unit,
@@ -139,6 +176,23 @@
       console.log(this.units)
     },
     methods: {
+      handleCheck (e) {
+        console.log(e)
+      },
+      handleSelect (item) {
+        const database = this.$store.state.database
+
+        console.log(item)
+        if (item.checked === 0 || item.checked === null) {
+          item.checked = 1
+        } else {
+          item.checked = 0
+        }
+
+        database.run(`
+          UPDATE transfusion SET checked=${item.checked} WHERE id=${item.transfusion_id}
+        `)
+      },
       getProductName (unit) {
         const productNameDict = {
           CRYOPPT: 'Cryoprecipitate',
@@ -148,8 +202,8 @@
         }
         return productNameDict[unit.product]
       },
-      hideProviderStats () {
-        this.$emit('hide-provider-stats')
+      back () {
+        this.$emit('back')
       },
     },
   }
@@ -165,4 +219,9 @@
 .heading-button {
   background-color: rgba(0, 0, 0, 0) !important;
 }
+
+/deep/ #units-table .v-messages {
+  display: none;
+}
+
 </style>

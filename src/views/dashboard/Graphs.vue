@@ -178,25 +178,19 @@
         />
       </v-col>
       <v-col v-if="provider">
-        <provider-stats
-          :provider="provider"
-          @hide-provider-stats="hideProviderInfo"
-        />
-      </v-col>
-      <v-col v-if="selectedUnits && graphType==='selected'">
         <selected-units
-          :units="selectedUnits"
-        >
-        </selected-units>
+          back-text="Back to Provider Graphs"
+          :title="provider.provider_name"
+          :units="provider.units"
+          @back="hideProviderInfo"
+        ></selected-units>
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script>
-  // import $ from 'jquery'
   import ProductGraph from '@/views/dashboard/graphs/ProductGraph'
-  import ProviderStats from '@/views/dashboard/components/ProviderStats'
   import SelectedUnits from '@/views/dashboard/tables/SelectedUnits'
 
   export default {
@@ -204,7 +198,6 @@
     components: {
       SelectedUnits,
       'product-graph': ProductGraph,
-      'provider-stats': ProviderStats,
     },
     data () {
       return {
@@ -349,6 +342,7 @@
         }
       },
       showProviderInfo (providerData) {
+        console.log(providerData)
         for (let i = 0; i < providerData.units.length; i++) {
           providerData.units[i].id = i
         }
