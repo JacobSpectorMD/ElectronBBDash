@@ -207,6 +207,7 @@
             db.createDatabase(result.filePath)
             db.addDatabasePath(cmp.$settingsDbPath, result.filePath).then((result) => {
               console.log('added database path', result)
+              result.exists = true
               cmp.databases.push(result)
             })
           }
@@ -231,6 +232,7 @@
         const cmp = this
         cmp.databases = []
         db.getExistingDatabases(cmp.$settingsDbPath).then(function (databases) {
+          console.log(databases)
           databases.forEach(function (database) {
             if (!fs.existsSync(database.location)) {
               database.exists = false
@@ -251,6 +253,7 @@
               cmp.databases.forEach(function (database) {
                 database.selected = false
               })
+              database.exists = true
               cmp.databases.push(database)
             })
           })

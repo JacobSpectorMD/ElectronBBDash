@@ -69,21 +69,30 @@ app.on('ready', async () => {
     }
   }
   createWindow()
-  app.db_path = path.join(app.getPath('userData'), 'bloodProducts.db')
 })
 
 const fs = require('fs')
 // const sqlite3 = require('sqlite3')
 const db = require('./assets/js/database.js')
 
-ipcMain.on('getDatabase', function (e) {
+ipcMain.on('getDatabase', async function (e) {
   // Open the settings database
   const settingsDbPath = path.join(app.getPath('userData'), 'settings.db')
+  let settingsDb = null
+  let timeoutDuration = 0
   if (!fs.existsSync(settingsDbPath)) {
-    db.createSettingsDatabase(settingsDbPath)
+    settingsDb = await db.createSettingsDatabase(settingsDbPath)
+    timeoutDuration = 3000
+  } else {
+    settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
   }
-  const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
 
+  setTimeout(function () {
+    setupDatabase(settingsDbPath, settingsDb)
+  }, timeoutDuration)
+})
+
+function setupDatabase (settingsDbPath, settingsDb) {
   // Get the location of the transfusion database
   db.unselectNonexistentDatabases(settingsDbPath).then(() => {
     getDbLocation(settingsDb).then(row => {
@@ -97,7 +106,11 @@ ipcMain.on('getDatabase', function (e) {
       })
     })
   })
-})
+    .catch((error) => {
+      win.webContents.send('getDatabase', null, settingsDbPath)
+      console.log(error)
+    })
+}
 
 function getDbLocation (settingsDb) {
   return new Promise((resolve, reject) => {

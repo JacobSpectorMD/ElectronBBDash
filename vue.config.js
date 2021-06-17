@@ -19,6 +19,10 @@ module.exports = {
         mac: {
           icon: 'build/icons/icon.png',
         },
+        win: {
+          icon: 'build/icons/icon.png',
+          target: ['portable'],
+        },
       },
       nodeIntegration: true,
       externals: ['sqlite3'],

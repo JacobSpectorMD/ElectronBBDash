@@ -14,7 +14,7 @@
           {{ subtitle }}
         </div>
       </div>
-      <div>
+      <div id="action-buttons">
         <v-text-field
           v-if="search"
           v-model="searchTerm"
@@ -24,7 +24,18 @@
           hide-details
         ></v-text-field>
         <v-btn
-          v-else
+          v-if="refresh"
+          elevation="0"
+          class="heading-button"
+          @click="refreshTransfusions"
+        >
+          <v-icon class="mr-2">
+            mdi-refresh
+          </v-icon>
+          Refresh
+        </v-btn>
+        <v-btn
+          v-if="!search"
           elevation="0"
           class="heading-button"
           @click="back"
@@ -48,6 +59,7 @@
         :show-select="checkboxes"
         :loading="units.length === 0"
         loading-text="Loading..."
+        single-select
       >
         <template v-slot:item.data-table-select="{ item }">
           <v-checkbox
@@ -79,6 +91,11 @@
       },
       loading: {
         type: Boolean,
+        default: false,
+      },
+      refresh: {
+        type: Boolean,
+        required: false,
         default: false,
       },
       title: {
@@ -166,9 +183,10 @@
         return compHeaders
       },
       items: function () {
+        const cmp = this
         return this.units.map(unit => ({
           ...unit,
-          date: new Date(unit.date).toLocaleDateString('en-US'),
+          date: cmp.convertDate(unit),
         }))
       },
     },
@@ -176,6 +194,16 @@
       console.log(this.units)
     },
     methods: {
+      convertDate (unit) {
+        return new Date(unit.time).toLocaleDateString('en-US', {
+          hourCycle: 'h23',
+          day: 'numeric',
+          year: 'numeric',
+          month: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+        })
+      },
       handleCheck (e) {
         console.log(e)
       },
@@ -205,6 +233,9 @@
       back () {
         this.$emit('back')
       },
+      refreshTransfusions () {
+        this.$emit('refreshTransfusions')
+      },
     },
   }
 
@@ -224,4 +255,8 @@
   display: none;
 }
 
+#action-buttons {
+  display: inline-flex;
+  align-items: flex-end;
+}
 </style>

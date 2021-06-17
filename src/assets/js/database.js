@@ -72,9 +72,7 @@ module.exports.createDatabase = function (dbPath) {
 }
 
 module.exports.createSettingsDatabase = function (dbPath) {
-  console.log('creating')
   const settingsDb = new sqlite3.Database(dbPath)
-  console.log('created')
   settingsDb.run(`
         CREATE TABLE IF NOT EXISTS database(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,6 +120,8 @@ module.exports.setActiveDatabase = function (component, settingsDbPath, database
 
 module.exports.getExistingDatabases = function (settingsDbPath) {
   return new Promise((resolve, reject) => {
+    console.log('getExistingDatabases', settingsDbPath)
+    if (!settingsDbPath || settingsDbPath === '') { return [] }
     const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
     const sql = 'SELECT * FROM database'
     const databases = []
@@ -178,12 +178,15 @@ function unselectNonexistentDatabases (settingsDbPath) {
     settingsDb.all(sql, function (err, rows) {
       if (err) { reject(err) }
 
+      if (!rows) { resolve(true) }
+
       rows.forEach(function (row) {
         settingsDb.run(`
           UPDATE database SET selected=0 WHERE id=${row.id}
         `)
       })
-    }).then(() => { resolve(true) })
+      resolve(true)
+    })
   })
 }
 

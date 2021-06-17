@@ -9,6 +9,8 @@
       :search="true"
       :checkboxes="true"
       :loading="true"
+      :refresh="true"
+      @refreshTransfusions="refreshTransfusions"
     ></selected-units>
   </v-container>
 </template>
@@ -24,10 +26,8 @@
         units: [],
       }
     },
-    activated () {
-      const cmp = this
-      this.getTransfusionData('ALL', '', '', '', '')
-        .then(function (rows) { rows.forEach((row) => cmp.units.push(row)) })
+    mounted () {
+      this.populateTransfusionData()
     },
     methods: {
       getTransfusionData (productType, specialty, location, startDateText, endDateText) {
@@ -72,10 +72,7 @@
           }
           const testDict = { fib: 'Fibrinogen', pro: 'PT', hgb: 'Hemoglobin', plt: 'Platelets' }
           database.all(sql, function (err, rows) {
-            console.log(rows)
-            if (err) {
-              console.log(err)
-            }
+            if (err) { }
             const filteredRows = []
             rows.forEach(function (row) {
               if (row.test_result !== '-1' && row.product) {
@@ -88,6 +85,15 @@
             resolve(filteredRows)
           })
         })
+      },
+      populateTransfusionData () {
+        const cmp = this
+        this.getTransfusionData('ALL', '', '', '', '')
+          .then(function (rows) { rows.forEach((row) => cmp.units.push(row)) })
+      },
+      refreshTransfusions () {
+        this.units.length = 0
+        this.populateTransfusionData()
       },
     },
   }
