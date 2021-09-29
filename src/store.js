@@ -16,7 +16,7 @@ export default new Vuex.Store({
   mutations: {
     close_database (state, db) {
       db.close((err) => {
-        if (err) { console.log(err) }
+        if (err) { }
       })
     },
     SET_BAR_IMAGE (state, payload) {

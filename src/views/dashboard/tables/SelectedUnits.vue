@@ -202,6 +202,7 @@
           month: 'numeric',
           hour: 'numeric',
           minute: 'numeric',
+          timeZone: 'UTC',
         })
       },
       handleCheck (e) {

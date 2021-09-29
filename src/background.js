@@ -1,4 +1,5 @@
 'use strict'
+import Vue from 'vue'
 
 import { app, ipcMain, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
@@ -6,7 +7,6 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
 import sqlite3 from 'sqlite3'
 const isDevelopment = process.env.NODE_ENV !== 'production'
-// import db from './datastore'
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } },
@@ -46,6 +46,7 @@ app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
+    Vue.$store.commit('close_databases')
     app.quit()
   }
 })
@@ -102,13 +103,12 @@ function setupDatabase (settingsDbPath, settingsDb) {
         win.webContents.send('getDatabase', null, settingsDbPath)
       }
       settingsDb.close((err) => {
-        if (err) { console.log(err) }
+        if (err) { }
       })
     })
   })
     .catch((error) => {
       win.webContents.send('getDatabase', null, settingsDbPath)
-      console.log(error)
     })
 }
 

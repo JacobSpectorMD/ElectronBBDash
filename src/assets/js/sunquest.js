@@ -91,11 +91,11 @@ class Test {
 
 // Blood product unit without other contextual information
 class Unit {
-    constructor(time, date, accession, num_units, unit_code, component, volume){
+    constructor(time, date, accession, units_in_order, unit_code, component, volume){
         this.time = time;
         this.date = date;
         this.acc = accession;
-        this.num_units = num_units;
+        this.units_in_order = units_in_order;
         this.unit_code = unit_code;
         this.component = component;
         this.volume = volume;
@@ -115,14 +115,15 @@ class TestCode{
 
 // Transfusion is a blood unit with all other contextual information (lab test, etc)
 class Transfusion {
-    constructor(MRN, name, u_time, u_date, u_acc, DIN, num_units, u_product, threshold, t_value, t_test, t_acc, t_time, indic){
+    constructor(MRN, name, u_time, u_date, u_acc, DIN, units_in_order, u_product, threshold, t_value, t_test, t_acc, t_time,
+                indic, unit_code){
         this.MRN = MRN;
         this.name = name;
+        this.num_units = 1;
         this.u_time = u_time;
         this.u_date = u_date;
         this.u_acc = u_acc;
         this.DIN = DIN;
-        this.num_units = num_units;
         this.u_product = u_product;
         this.threshold = threshold;
         this.t_value = t_value;
@@ -133,7 +134,9 @@ class Transfusion {
         this.location = "";
         this.provider = "";
         this.specialty = "";
+        this.units_in_order = units_in_order;
         this.units_on_day = 0;
+        this.unit_code = unit_code;
 
         this.MRN_ID = "";
         this.name_ID = "";
@@ -195,45 +198,6 @@ module.exports.process = async function process(db, file) {
   }
 }
 
-// module.exports.process = async function process(db, file){
-//     location_dict = {}, patient_list = [], patient_dict = {}, provider_dict = {}, product_dict = {};
-//     read_data_dict(db)
-//         .then((result) => {
-//             let values = determine_file_type(file);
-//             var file_type = values[0],
-//                 lines = values[1];
-//             if (file_type == "utilization"){
-//                 read_utilization_report(lines);
-//                 replace_test_codes();
-//                 find_most_recent_tests();
-//                 add_units_per_day();
-//                 utilization_data_to_db(db);
-//             } else if (file_type == "location"){
-//                 let units;
-//                 read_location_report(db, file)
-//                     .then(function(result){
-//                         add_providers_to_db(db, result.providers);
-//                         add_locations_to_db(db, result.locations);
-//                         add_products_to_db(db, result.products);
-//                         units = result.units;
-//                     })
-//                     .then(() => {
-//                         read_data_dict(db).then((data) => {
-//                             let providers = data.providers;
-//                             let locations = data.locations;
-//
-//                             units.forEach(function(unit){
-//                                 unit.provider_id = providers[unit.provider_name].id;
-//                                 if (unit.location_code){unit.location_id = locations[unit.location_code].id;}
-//                             })
-//                             add_units_to_db(db, units);
-//                         })
-//                     })
-//             }
-//             location_dict = {}, patient_list = [], patient_dict = {}, provider_dict = {}, product_dict = {};
-//         });
-// }
-
 function determine_file_type(file){
     let lines = fs.readFileSync(file.path, "utf8");
     lines = lines.split('\n');
@@ -246,7 +210,8 @@ function determine_file_type(file){
 }
 
 function utilization_data_to_db(db){
-    let sql = `INSERT INTO transfusion (time, date, mrn, din, accession, num_units, product, units_on_day, test_type, test_result, test_accession, test_time, indicated) VALUES `;
+    let sql = `INSERT INTO transfusion (time, date, mrn, din, accession, num_units, units_in_order, product, units_on_day, test_type, test_result, test_accession, test_time, indicated) VALUES `;
+
     for (var MRN in patient_dict){
         let patient = patient_dict[MRN];
         patient.transfusions.forEach(function(trfn){
@@ -255,19 +220,19 @@ function utilization_data_to_db(db){
             let date = trfn.u_date.getTime();
             let test_time = (trfn.t_time == "no recent test") ? -1 : trfn.t_time.getTime();
             if (trfn.t_value == undefined || trfn.t_value == "none"){trfn.t_value=-1};
-            let values = `(${time}, ${date}, ${unit_mrn}, "${trfn.DIN}", "${trfn.u_acc}", ${trfn.num_units}, "${trfn.u_product}", ${trfn.units_on_day}, "${trfn.t_test}", ${trfn.t_value}, "${trfn.t_acc}", ${test_time}, "${trfn.indic}"), `;
+            let values = `(${time}, ${date}, ${unit_mrn}, "${trfn.DIN}", "${trfn.u_acc}", ${trfn.num_units}, ${trfn.units_in_order}, "${trfn.u_product}", ${trfn.units_on_day}, "${trfn.t_test}", ${trfn.t_value}, "${trfn.t_acc}", ${test_time}, "${trfn.indic}"), `;
             sql += values;
         })
     }
     sql = sql.replace(/.{2}$/, "");
-    sql += ` ON CONFLICT(date, din, accession) DO UPDATE SET time=excluded.time,  mrn=excluded.mrn, num_units=excluded.num_units, product=excluded.product, units_on_day=excluded.units_on_day, test_type=excluded.test_type, test_result=excluded.test_result, test_accession=excluded.test_accession, test_time=excluded.test_time, indicated=excluded.indicated;`;
+    sql += ` ON CONFLICT(date, din, accession) DO UPDATE SET time=excluded.time,  mrn=excluded.mrn, num_units=excluded.num_units, units_in_order=excluded.units_in_order, product=excluded.product, units_on_day=excluded.units_on_day, test_type=excluded.test_type, test_result=excluded.test_result, test_accession=excluded.test_accession, test_time=excluded.test_time, indicated=excluded.indicated;`;
     db.run(sql, function(err){if(err){console.log(err)}});
 }
 
 var mrn_pattern = new RegExp('\\d{8}');
 // Determine what type of section the current line is in
-function what_section(line){
-    line_array = line.split(/\s+/);
+function what_section(section, line){
+    let line_array = line.split(/\s+/);
     let words = [];
     line_array.forEach(function(element){
         if (element != "" && !line.includes("===") && !line.includes("- - -")){
@@ -303,21 +268,21 @@ function make_transfusion(patient, unit){
 
     var product = unit.product_type;
     if (product.includes("unknown")){
-        return new Transfusion(patient.MRN, patient.name, unit.time, unit.acc, unit.DIN, unit.num_units, product,
-                           "N/A", "none", "N/A", "none", "N/A", "N/A");
+        return new Transfusion(patient.MRN, patient.name, unit.time, unit.date, unit.acc, unit.DIN, unit.units_in_order, product,
+                           "N/A", "none", "N/A", "none", "N/A", "N/A", unit.unit_code);
     }
 
     var threshold = parseFloat(thresholds[product].slice(1, thresholds[product].length+1));
     var test_type = prod_test[product];
 
-    var transfusion = new Transfusion(patient.MRN, patient.name, unit.time, unit.date, unit.acc, unit.DIN, unit.num_units, product,
-                                  threshold, "none", test_type, "none", "no recent test", "N/A");
+    var transfusion = new Transfusion(patient.MRN, patient.name, unit.time, unit.date, unit.acc, unit.DIN, unit.units_in_order, product,
+                                  threshold, "none", test_type, "none", "no recent test", "N/A", unit.unit_code);
 
     var most_recent_test = null;
 
-    for (var i=0; i < patient.tests.length; i++){
-        var test = patient.tests[i];
-        if ((test.time < unit.time) && !['', 'credit'].includes(test[test_type])){
+    for (var i=0; i < patient.tests.length; i++) {
+        let test = patient.tests[i];
+        if ((test.time < unit.time) && !['', 'credit', undefined].includes(test[test_type])){
             most_recent_test = test;
         } else if (test.time > unit.time){
             break;
@@ -341,12 +306,15 @@ function make_transfusion(patient, unit){
     return transfusion;
 }
 
-function location_line_type(col){
+const providerIdPattern = /\d{5}/;
+
+function location_line_type(line, col){
     try {
-        if (parseInt(col[0]) > 0 && col[1].includes(",")){
-            return ["provider", ''];
+        if (!col[0].includes(':') && parseInt(col[0]) > 0 && line.includes(",")){
+          console.log(line)
+          return ["provider", ''];
         }
-    } catch (e){}
+    } catch (e) { }
 
     try {
         if (col[0][0] == "W" && !isNaN(parseInt(col[0].slice(1, 4)))){
@@ -422,11 +390,14 @@ function last_name(provider_key){
     return provider_key.split('-')[1];
 }
 
+const din_pattern = /[A-Z]\d{4}/;
+
 function read_utilization_report(lines){
     let section = "start";
     let MRN_added = false;
     var MRN, name;
     var month, day, year, hour, minute;
+    let unit_code = '';
     lines.forEach(function(line){
         if (line.includes("====")){section = "new-pt"; MRN_added = false; return;}
         if (line.includes("- - -")){section = "determine"; return;}
@@ -440,7 +411,7 @@ function read_utilization_report(lines){
 
         if (words[0].includes("(F")){section = "units"}
         if (section == "determine" && words.length > 0){
-            section = what_section(line);
+            section = what_section(section, line);
             if (section == "determine"){return;}
         }
         if (section == "pt-info" && MRN_added == false){
@@ -460,7 +431,7 @@ function read_utilization_report(lines){
             if (line.length < 108){
                 while (line.length < 108){line += " "}
             }
-            if (strip(line.slice(0, 9)) != ""){
+            if (strip(line.slice(0, 9)) != "") {
                 month = parseInt(line.slice(0, 2));
                 day = parseInt(line.slice(3, 5));
                 year = parseInt(line.slice(6, 10));
@@ -473,8 +444,8 @@ function read_utilization_report(lines){
             let date = new Date(Date.UTC(year, month-1, day, 0, 0, 0, 0));
             let accession = strip(line.slice(20, 26));
 
-            if (line.slice(30, 32).trim() != ""){var num_units = parseInt(line.slice(30, 32).trim());}
-            if (line.slice(33, 39).trim() != ""){var unit_code = line.slice(33, 39).trim();}
+            if (line.slice(30, 32).trim() != ""){var units_in_order = parseInt(line.slice(30, 32).trim());}
+            if (line.slice(33, 39).trim() != ""){unit_code = line.slice(33, 39).trim();}
             if (line.slice(40, 45).trim() != ""){var component = line.slice(40, 46).trim();}
             if (line.slice(51, 54).trim() != ""){var volume = parseInt(line.slice(51, 54).trim());}
 
@@ -491,14 +462,14 @@ function read_utilization_report(lines){
                 if (strip(line.slice(31, 36)) == ""){
                     patient_dict[MRN].tests.push(new Test(time, accession, hgb, plt, fib, hct, pro));
                 } else if (strip(line.slice(31, 36)) != ""){
-                    patient_dict[MRN].units.push(new Unit(time, date, accession, num_units, unit_code, component, volume));
+                    patient_dict[MRN].units.push(new Unit(time, date, accession, units_in_order, unit_code, component, volume));
                 }
             } else {
                 let patient = new Patient(name, MRN);
                 if (strip(line.slice(31, 36)) == ""){
                     patient.tests.push(new Test(time, accession, hgb, plt, fib, hct, pro));
                 } else if (strip(line.slice(31, 36)) != ""){
-                    patient.units.push(new Unit(time, date, accession, num_units, unit_code, component, volume));
+                    patient.units.push(new Unit(time, date, accession, units_in_order, unit_code, component, volume));
                 }
             }
         }
@@ -512,11 +483,27 @@ function read_utilization_report(lines){
         }
 
         if (section == "units" && line.includes("(F")){
-            let unit_code = col[0];
+            unit_code = col[0];
             let DIN = col[1] + col[2] + col[3];
+            if (DIN.length > 13) {
+              DIN = line.slice(11, 26).replace(/\s/g, '')
+            }
             patient_dict[MRN].units.forEach(function(unit){
                 if (unit.unit_code == unit_code){unit.DIN = DIN;}
             })
+        } else if (section == "units" && din_pattern.exec(line)) {
+          let DIN = col[0] + col[1] + col[2];
+          if (DIN.length > 13) {
+             DIN = line.slice(11, 26).replace(/\s/g, '')
+          }
+          patient_dict[MRN].units.forEach(function(unit){
+            if (unit.unit_code == unit_code) {
+              const newUnit = {...unit}
+              newUnit.DIN = DIN
+              newUnit.unit_code += '_additional'
+              patient_dict[MRN].units.push(newUnit)
+            }
+          })
         }
     })
 }
@@ -524,7 +511,7 @@ function read_utilization_report(lines){
 // Replaces the test code, e.g. (T1), with it's corresponding test value e.g. 23.0
 function replace_test_codes(){
     console.log("Replacing test codes [e.g. (T1)] with their values.");
-
+    console.log(patient_dict)
     for (let MRN in patient_dict){
         let patient = patient_dict[MRN];
         patient.tests.forEach(function(test){
@@ -579,22 +566,30 @@ function get_location(location_str){
     return location;
 }
 
-function add_provider(col){
-    let ucsf_id = col[0];
-    let last_name = col[1].split(',')[0];
-    let first_name = col[1].split(',')[1];
+const providerPattern = /^\d+\s+/
 
-    let temp_name = '';
-    for (i = 1; i < col.length; i++){
-        temp_name += col[i];
-    }
-    middle = temp_name.split(',')[1].replace(first_name, '').replace('.', '');
-    let display_name = last_name+', '+first_name+' '+middle;
+function add_provider(line, col) {
+    let ucsf_id = col[0];
+
+    // Get the provider name. Last name is everything before comma, first name is the name after comma, and middle name
+    // is everything after the first name.
+    line = line.replace(providerPattern, '')
+    const nameCols = line.split(',')
+    let lastName = nameCols[0].trim()
+    let firstName = nameCols[1].split(/\s+/)[0].trim()
+    let middleName = nameCols[1].replace(firstName, '').trim()
+
+    // let temp_name = '';
+    // for (i = 1; i < col.length; i++){
+    //     temp_name += col[i];
+    // }
+    // middle = temp_name.split(',')[1].replace(first_name, '').replace('.', '');
+    let display_name = lastName+', '+firstName+' '+middleName;
     display_name = display_name.trim().titleCase();
 
     let provider;
     if  (provider_dict[display_name] == undefined){
-        provider = new Provider(-1, '', last_name, first_name, middle, ucsf_id=ucsf_id);
+        provider = new Provider(-1, '', lastName, firstName, middleName, ucsf_id=ucsf_id);
         provider_dict[provider.display_name()] = provider;
         return provider;
     } else {
@@ -614,6 +609,9 @@ function add_location(location_str){
 
 function add_unit(provider, location, date, col, line, blood_product_type){
     let DIN = (col[0] + col[1] + col[2]).replace(/\s+/, '');
+    if (DIN.length > 13) {
+       DIN = line.slice(11, 26).replace(/\s/g, '')
+    }
     let accession = line.slice(55, 62).trim();
     let new_code = line.slice(38, 46).trim();
     // Add product code to database
@@ -726,7 +724,7 @@ function read_location_report(db, location_report){
         for (var i = 0; i < lines.length; i++){
             let line = lines[i];
             let col = line.trim().split(/\s+/);
-            let line_type = location_line_type(col);
+            let line_type = location_line_type(line, col);
             let location_str = line.slice(89, 99);
 
             if (line.includes('/')){
@@ -740,7 +738,7 @@ function read_location_report(db, location_report){
             } else if (line_type[0] == "product_type"){
                 blood_product_type = line_type[1];
             } else if (line_type[0] == "provider"){
-                provider = add_provider(col);
+                provider = add_provider(line, col);
             } else if (line_type[0] == "unit"){
                 add_location(location_str);
                 let location = get_location(location_str);
@@ -758,8 +756,8 @@ function read_location_report(db, location_report){
     })
 }
 
-function just_date(time){
-    return time.getFullYear()+'-'+time.getMonth()+'-'+time.getDate();
+function just_date(time) {
+    return time.getUTCFullYear()+'-'+time.getUTCMonth()+'-'+time.getUTCDate();
 }
 
 function add_units_per_day(){
@@ -775,18 +773,37 @@ function add_units_per_day(){
         }
     }
 
-    let count = 0;
     for (var MRN in patient_dict){
         let patient = patient_dict[MRN];
 
-        //Determine the number of transfusions on the same day
         patient.transfusions.forEach(function(transfusion){
+            let counted_orders = {}
             let units_on_day = 0;
             let date = just_date(transfusion.u_time);
             for (var i = 0; i < patient.transfusions.length; i++){
-                let other_transfusion_date = just_date(patient.transfusions[i].u_time);
-                if (date == other_transfusion_date){
-                    units_on_day += patient.transfusions[i].num_units;
+                let other_transfusion = patient.transfusions[i]
+
+                // For transfusions with the same accession, DIN, and time, only count them once
+                let transfusion_key = other_transfusion.DIN + other_transfusion.u_acc + other_transfusion.u_time
+                let other_transfusion_date = just_date(other_transfusion.u_time);
+                // Determine the number of transfusions on the same day
+                if (date == other_transfusion_date &&
+                    !patient.transfusions[i].unit_code.includes("additional") &&
+                    !counted_orders[transfusion_key]
+                ){
+                    units_on_day += patient.transfusions[i].units_in_order;
+                    counted_orders[transfusion_key] = true
+                }
+
+                // Determine the number of transfusions that are part of the same order, i.e. same accession, DIN, and
+                // time, but with different unit codes
+                if (transfusion.DIN == other_transfusion.DIN &&
+                    transfusion.u_acc == other_transfusion.u_acc &&
+                    transfusion.u_time.getTime() == other_transfusion.u_time.getTime() &&
+                    transfusion.unit_code != other_transfusion.unit_code
+                ) {
+                  transfusion.num_units += 1;
+                  transfusion.units_in_order += 1;
                 }
             }
             transfusion.units_on_day = units_on_day;

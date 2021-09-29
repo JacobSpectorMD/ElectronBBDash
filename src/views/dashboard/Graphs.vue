@@ -396,7 +396,7 @@
           if (productType !== 'ALL') {
             parameters.push(`t.product="${productType}"`)
           }
-          if (location !== '') {
+          if (location !== '' && location !== null) {
             parameters.push(`t.location="${location}"`)
           }
           if (specialty !== '') {

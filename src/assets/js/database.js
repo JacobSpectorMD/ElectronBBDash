@@ -52,6 +52,7 @@ module.exports.createDatabase = function (dbPath) {
             checked INTEGER,
             num_units INTEGER,
             product TEXT,
+            units_in_order INTEGER,
             units_on_day INTEGER,
             test_type TEXT,
             test_result TEXT,
@@ -120,7 +121,6 @@ module.exports.setActiveDatabase = function (component, settingsDbPath, database
 
 module.exports.getExistingDatabases = function (settingsDbPath) {
   return new Promise((resolve, reject) => {
-    console.log('getExistingDatabases', settingsDbPath)
     if (!settingsDbPath || settingsDbPath === '') { return [] }
     const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
     const sql = 'SELECT * FROM database'
@@ -181,9 +181,11 @@ function unselectNonexistentDatabases (settingsDbPath) {
       if (!rows) { resolve(true) }
 
       rows.forEach(function (row) {
-        settingsDb.run(`
-          UPDATE database SET selected=0 WHERE id=${row.id}
-        `)
+        if (!fs.existsSync(row.location)) {
+          settingsDb.run(`
+            UPDATE database SET selected=0 WHERE id=${row.id}
+          `)
+        }
       })
       resolve(true)
     })
