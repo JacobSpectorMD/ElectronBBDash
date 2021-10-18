@@ -232,7 +232,7 @@
         const cmp = this
         cmp.databases = []
         db.getExistingDatabases(cmp.$settingsDbPath).then(function (databases) {
-          console.log(databases)
+          console.log('existing databases', databases)
           databases.forEach(function (database) {
             if (!fs.existsSync(database.location)) {
               database.exists = false

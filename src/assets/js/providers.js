@@ -48,7 +48,7 @@ function getProviderInfo (db) {
         const sql = 'SELECT * FROM provider'
         const data = {}
         db.all(sql, function (err, rows) {
-            if (err) { console.log(err) }
+            if (err) { }
             rows.forEach(function (row) {
                 let lastName = ''
                 let firstName = ''
@@ -284,6 +284,11 @@ function drawGraph (data, productType, anonymous, specialty = '', divId) {
               </tbody>
             </table>
           `)
+      if (!d[1].specialty) {
+        tip.select('.specialty-comparison-button').style('opacity', '0').style('disabled', true).style('cursor', 'default')
+      } else {
+        tip.select('.specialty-comparison-button').style('opacity', '1').style('disabled', false)
+      }
 
       // Place tip towards the right if the right half of the screen is clicked
       const scrolled = $('#' + divId + ' .svg-div').scrollLeft()

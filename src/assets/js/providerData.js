@@ -16,11 +16,13 @@ export function addProvidersToDatabase (db, providerInput) {
     const providerList = []
     for (let i = 0; i < enteredProviders.length; i++) {
       const col = enteredProviders[i].trim().split('\t')
+      if (col.length < 4) { continue }
 
       const p = {} // Provider
-      p.firstName = col[0].trim()
+      p.firstName = col[0].trim() || null
       p.middleName = col[1].trim()
-      p.lastName = col[2].trim()
+      p.lastName = col[2].trim() || null
+      if (!p.firstName || !p.lastName) { continue }
       if (!col[3]) {
         p.specialtyName = null
         p.specialtyId = 'NULL'
@@ -61,7 +63,7 @@ function sqlProvidersToDatabase (db, providerList) {
     const sql = `INSERT INTO provider (first_name, middle_name, last_name, specialty_name, specialty_id) VALUES ${values} ON CONFLICT (first_name, middle_name, last_name) DO UPDATE SET specialty_name=coalesce(excluded.specialty_name, specialty_name), specialty_id=coalesce(excluded.specialty_id, specialty_id);`
 
     db.run(sql, function (err) {
-      if (err) { console.log(err) }
+      if (err) { }
     })
   }
 }

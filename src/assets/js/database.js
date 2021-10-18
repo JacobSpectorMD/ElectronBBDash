@@ -125,7 +125,9 @@ module.exports.getExistingDatabases = function (settingsDbPath) {
     const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
     const sql = 'SELECT * FROM database'
     const databases = []
+    console.log(settingsDb, sql)
     settingsDb.all(sql, function (err, rows) {
+      console.log(rows)
       if (err) { }
       rows.forEach(function (row) {
         databases.push({

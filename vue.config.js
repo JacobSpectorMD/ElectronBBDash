@@ -16,9 +16,9 @@ module.exports = {
     electronBuilder: {
       builderOptions: {
         appId: 'com.jacobspectormd.bbdash',
-        mac: {
-          icon: 'build/icons/icon.png',
-        },
+        // mac: {
+        //   icon: 'build/icons/icon.png',
+        // },
         win: {
           icon: 'build/icons/icon.png',
           target: ['portable'],

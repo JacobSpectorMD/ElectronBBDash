@@ -8,9 +8,8 @@ export function addSpecialtiesToDatabase (db, specialtyDict) {
 
     let sql = `INSERT or IGNORE INTO specialty (name) VALUES ${values}`
     sql = sql.replace(/.$/, ';')
-    console.log(sql)
     db.run(sql, function (err) {
-      if (err) { console.log(err) }
+      if (err) { }
       const specialtyQuery = 'SELECT * FROM specialty'
       db.all(specialtyQuery, function (err, rows) {
         if (err) { }
