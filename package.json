@@ -10,6 +10,7 @@
     "lint": "vue-cli-service lint",
     "dev": "vue-cli-service serve --open",
     "electron:build": "vue-cli-service electron:build",
+    "build-mac": "electron-package . --platform=darwin --prepackaged --out=build --icon =./assets/icons/mac/Icon.icns --overwrite --app-build-id=\"com.jacobspectormd.bbdash\" --app-version=\"2.1.0\" --build-version=\"2.1.0\" --osx-sign",
     "electron:buildall": "vue-cli-service electron:build -mw",
     "electron:serve": "vue-cli-service electron:serve",
     "i18n:report": "vue-cli-service i18n:report --src './src/**/*.?(js|vue)' --locales './src/locales/**/*.json'",
