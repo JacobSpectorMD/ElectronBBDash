@@ -8,6 +8,24 @@
       class="px-5 py-3"
       color="#364d5c"
     >
+      <v-snackbar
+        v-model="snackbar"
+        timeout="120000"
+      >
+        <span class="red--text">The following codes are not in the database: <br></span>{{ snackbarText }}
+        <template
+          v-slot:action="{ attrs }"
+        >
+          <v-btn
+            color="white"
+            text
+            v-bind="attrs"
+            @click="snackbar = false"
+          >
+            Close
+          </v-btn>
+        </template>
+      </v-snackbar>
       <template v-slot:heading>
         <div
           class="text-h3 font-weight-light"
@@ -76,12 +94,6 @@
             </td>
             <td>
               {{ file.path }}<br>
-              <span
-                v-if="failedCodes.length > 0"
-                class="red--text"
-              >
-                Warning: {{ snackbarText }}
-              </span>
             </td>
           </tr>
         </tbody>
@@ -168,13 +180,13 @@
         failedCodes: [],
         filelist: [],
         processingFiles: [],
-        snackbar: true,
+        snackbar: false,
         transfusions: [],
       }
     },
     computed: {
       snackbarText: function () {
-        let text = 'The following codes could not be associated with a product type. Please add these to the database and try adding this file again: \n'
+        let text = ''
         this.failedCodes.forEach(failedCode => {
           text += failedCode
         })
@@ -229,6 +241,7 @@
           processFile(database, f).then(result => {
             if (result.failed_codes.length > 0) {
               this.failedCodes = result.failed_codes
+              this.snackbar = true
             }
             if (result.success) {
               this.processingFiles.forEach(file => {
