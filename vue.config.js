@@ -16,13 +16,13 @@ module.exports = {
     electronBuilder: {
       builderOptions: {
         appId: 'com.jacobspectormd.bbdash',
-        // mac: {
-        //   icon: 'build/icons/icon.png',
-        // },
-        win: {
+        mac: {
           icon: 'build/icons/icon.png',
-          target: ['portable'],
         },
+        // win: {
+        //   icon: 'build/icons/icon.png',
+        //   target: ['portable'],
+        // },
       },
       nodeIntegration: true,
       externals: ['sqlite3'],

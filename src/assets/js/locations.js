@@ -1,5 +1,4 @@
 export function addLocationsToDatabase (db, input) {
-  console.log(input)
   const enteredLocations = input.replace(/\r?\n/g, ';').split(';')
 
   enteredLocations.forEach(function (location) {

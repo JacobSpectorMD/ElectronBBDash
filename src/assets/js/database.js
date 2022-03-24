@@ -50,6 +50,7 @@ module.exports.createDatabase = function (dbPath) {
             din TEXT,
             accession TEXT,
             checked INTEGER,
+            component TEXT,
             num_units INTEGER,
             product TEXT,
             units_in_order INTEGER,
@@ -66,7 +67,7 @@ module.exports.createDatabase = function (dbPath) {
             provider_id INTEGER,
             FOREIGN KEY(location_id) REFERENCES location(id),
             FOREIGN KEY(provider_id) REFERENCES provider(id),
-            UNIQUE(date, din, accession)
+            UNIQUE(date, din, accession, component)
         )
     `)
   return db
@@ -99,7 +100,7 @@ module.exports.addDatabasePath = async function (settingsDbPath, dbPath) {
 
     const sql = `SELECT * FROM database WHERE location="${dbPath}"`
     settingsDb.get(sql, function (err, row) {
-      if (err) { console.log(err) }
+      if (err) { }
       closeDatabase(settingsDb)
       resolve(row)
     })
@@ -125,9 +126,8 @@ module.exports.getExistingDatabases = function (settingsDbPath) {
     const settingsDb = new sqlite3.Database(settingsDbPath, sqlite3.OPEN_READWRITE)
     const sql = 'SELECT * FROM database'
     const databases = []
-    console.log(settingsDb, sql)
+
     settingsDb.all(sql, function (err, rows) {
-      console.log(rows)
       if (err) { }
       rows.forEach(function (row) {
         databases.push({
@@ -144,7 +144,7 @@ module.exports.getExistingDatabases = function (settingsDbPath) {
 
 function closeDatabase (database) {
   database.close((err) => {
-    if (err) { console.log(err) }
+    if (err) { }
   })
 }
 
@@ -169,7 +169,7 @@ module.exports.deleteDatabase = function (settingsDbPath, databaseLocation) {
   try {
     fs.unlinkSync(databaseLocation)
   } catch (err) {
-    console.log(err)
+
   }
 }
 

@@ -173,7 +173,7 @@
           @sentProviderInfo="showProviderInfo"
           @showSelectedUnits="showSelectedUnits"
           @specialtyComparison="specialtyComparison"
-          @backToAllProviders="graphType = 'Providers'"
+          @backToAllProviders="graphType = 'Providers'; specialty = ''"
           color="#687A85"
         />
       </v-col>
@@ -282,7 +282,6 @@
       clearGraphs () {
         // this.graphs.length = 0
         this.graphs = this.graphs.filter(graph => graph.type !== this.graphType)
-        console.log(this.graphType, this.graphs)
         this.provider = null
         this.unfilteredTransfusionData.length = 0
       },
@@ -300,7 +299,6 @@
             cmp.specialty = cmp.selectedSpecialty
           }
         }
-
         this.getTransfusionData(productType, this.specialty, location, startDate, endDate)
           .then(function (rows) { cmp.drawGraphs(rows, productType) })
       },
@@ -426,12 +424,14 @@
               sql += ' AND ' + parameters[i]
             }
           }
+          console.log(sql)
           const testDict = { fib: 'Fibrinogen', pro: 'PT', hgb: 'Hemoglobin', plt: 'Platelets' }
           database.all(sql, function (err, rows) {
             if (err) {
               console.log(err)
             }
             const filteredRows = []
+            console.log(rows)
             rows.forEach(function (row) {
               if (row.test_result !== '-1' && row.product) {
                 row.value = parseFloat(row.test_result)

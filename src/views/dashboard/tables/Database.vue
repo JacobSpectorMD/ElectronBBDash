@@ -11,7 +11,8 @@
       <template v-slot:heading>
         <div
           class="text-h3 font-weight-light"
-        >Add Transfusions To Database</div>
+        >Add Transfusions To Database
+        </div>
       </template>
       <div
         id="file-drop"
@@ -61,9 +62,18 @@
             :key="index"
             class="file-row"
           >
-            <td v-if="file.processed == 'failed'"><v-icon color="primary">mdi-image-broken</v-icon> Failed</td>
-            <td v-else-if="file.processed"><v-icon color="secondary">mdi-check-bold</v-icon> Complete</td>
-            <td v-else><v-icon color="secondary">mdi-timer-sand</v-icon> Processing</td>
+            <td v-if="file.processed == 'failed'">
+              <v-icon color="primary">mdi-image-broken</v-icon>
+              Failed
+            </td>
+            <td v-else-if="file.processed">
+              <v-icon color="secondary">mdi-check-bold</v-icon>
+              Complete
+            </td>
+            <td v-else>
+              <v-icon color="secondary">mdi-timer-sand</v-icon>
+              Processing
+            </td>
             <td>{{ file.path }}</td>
           </tr>
         </tbody>
@@ -74,9 +84,24 @@
       class="px-5 py-3"
       color="#364d5c"
     >
-      <template v-slot:heading>
+      <template
+        v-slot:heading
+        class="card-heading"
+      >
         <div class="text-h3 font-weight-light">
           Transfusions In Database
+        </div>
+        <div class="heading-buttons">
+          <v-btn
+            elevation="0"
+            class="heading-button"
+            @click="downloadTransfusions"
+          >
+            Download
+            <v-icon class="mr-2">
+              mdi-download
+            </v-icon>
+          </v-btn>
         </div>
       </template>
       <v-simple-table>
@@ -126,6 +151,8 @@
 <script>
   import processFile from '@/assets/js/utilities.js'
 
+  const { saveAs } = require('@/assets/js/FileSaver.js')
+
   export default {
     data () {
       return {
@@ -143,6 +170,26 @@
       }
     },
     methods: {
+      downloadTransfusions () {
+        const cmp = this
+        const database = this.$store.state.database
+        let selectedTransfusions = 'Units On Day\tUnit Date\tUnit Accession\tDIN\tNumber Of Units\tProduct\tTest Result\tTest Type\tTest Accession\tTest Date\tLocation\tProvider\tSpecialty\r\n'
+        const testDict = { fib: 'Fibrinogen', pro: 'PT', hgb: 'Hemoglobin', plt: 'Platelets' }
+
+        const sql = 'SELECT *  FROM transfusion AS t INNER JOIN provider AS p ON p.id=t.provider_id;'
+        database.all(sql, function (err, rows) {
+          if (err) { }
+          rows.forEach(function (row) {
+            if (row.test_result !== '-1' && row.product) {
+              row.value = parseFloat(row.test_result)
+              row.test = testDict[row.test_type]
+              selectedTransfusions += cmp.transfusionTextLine(row)
+            }
+          })
+          const blob = new Blob([selectedTransfusions], { type: 'text/plain;charset=utf-8' })
+          saveAs(blob, 'Selected Transfusions.txt', true)
+        })
+      },
       dragover (event) {
         event.preventDefault()
       },
@@ -163,11 +210,15 @@
           processFile(database, f).then(result => {
             if (result) {
               this.processingFiles.forEach(file => {
-                if (file.path === f.path) { file.processed = true }
+                if (file.path === f.path) {
+                  file.processed = true
+                }
               })
             } else {
               this.processingFiles.forEach(file => {
-                if (file.path === f.path) { file.processed = 'failed' }
+                if (file.path === f.path) {
+                  file.processed = 'failed'
+                }
               })
             }
           })
@@ -175,7 +226,6 @@
         this.filelist = []
       },
       processFiles (e) {
-        console.log(e)
       },
       showTransfusionCalendar () {
         this.transfusions.splice(0)
@@ -184,7 +234,8 @@
         const sql = 'SELECT * FROM transfusion ORDER BY time ASC'
         database.all(sql, function (err, rows) {
           const years = {}
-          if (err) { }
+          if (err) {
+          }
           rows.forEach(function (row) {
             const date = new Date(row.time)
             const month = date.getMonth()
@@ -203,6 +254,12 @@
           })
         })
       },
+      transfusionTextLine (t) {
+        const unitDate = new Date(t.time).toISOString().replace(/T/, ' ').replace(/\..+/, '')
+        const testDate = new Date(t.test_time).toISOString().replace(/T/, ' ').replace(/\..+/, '')
+        const elements = [t.units_on_day, unitDate, t.accession, t.din, t.num_units, t.product, t.test_result, t.test_type, t.test_accession, testDate, t.location, t.provider, t.specialty_name]
+        return elements.join('\t') + '\r\n'
+      },
     },
   }
 
@@ -218,6 +275,15 @@
 </script>
 
 <style scoped>
+  /deep/ .text-start {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .heading-button {
+    background-color: rgba(0, 0, 0, 0) !important;
+  }
+
   /deep/ #file-drop {
     height: 200px;
     border: medium dashed #4c6b7f;

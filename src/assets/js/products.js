@@ -380,7 +380,7 @@ function saveSelection (selectVals, data) {
   saveAs(blob, 'Selected Transfusions.txt', true)
 }
 
-function transfusionTextLine (t) {
+export function transfusionTextLine (t) {
   const unitDate = new Date(t.time).toISOString().replace(/T/, ' ').replace(/\..+/, '')
   const testDate = new Date(t.test_time).toISOString().replace(/T/, ' ').replace(/\..+/, '')
   const elements = [t.units_on_day, unitDate, t.accession, t.din, t.num_units, t.product, t.test_result, t.test_type,

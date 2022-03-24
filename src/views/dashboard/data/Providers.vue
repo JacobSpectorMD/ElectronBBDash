@@ -47,9 +47,23 @@
           class="px-5 py-3"
           color="#364d5c"
         >
-          <template v-slot:heading>
+          <template
+            v-slot:heading
+            class="card-heading"
+          >
             <div class="text-h3 font-weight-light">
               Providers In Database
+            </div>
+            <div class="heading-buttons">
+              <v-btn
+                elevation="0"
+                class="heading-button"
+                @click="getProviderData"
+              >
+                <v-icon class="mr-2">
+                  mdi-refresh
+                </v-icon>
+              </v-btn>
             </div>
           </template>
           <v-card-title>
@@ -116,7 +130,6 @@
       getProviderData () {
         const cmp = this
         const database = cmp.$store.state.database
-        console.log('getPRoviderData', database)
         cmp.providers = []
         const sql = 'SELECT * FROM provider ORDER BY last_name ASC'
         database.all(sql, function (err, rows) {
@@ -134,9 +147,10 @@
       submitInput () {
         const database = this.$store.state.database
         console.log(database, this.providerInput)
-        addProvidersToDatabase(database, this.providerInput)
+        addProvidersToDatabase(database, this.providerInput).then((result) => {
+          this.getProviderData()
+        })
         this.locationInput = ''
-        this.getProviderData()
       },
     },
     activated () {
@@ -146,6 +160,11 @@
 </script>
 
 <style scoped>
+/deep/ .text-start {
+  display: flex;
+  justify-content: space-between;
+}
+
 /deep/ .v-textarea {
   margin-top: 24px;
 }
@@ -168,5 +187,9 @@
 /deep/ .button-div button {
   margin-right: 0px !important;
   margin-top: 16px;
+}
+
+.heading-button {
+  background-color: rgba(0, 0, 0, 0) !important;
 }
 </style>

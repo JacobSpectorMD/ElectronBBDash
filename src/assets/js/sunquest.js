@@ -115,7 +115,7 @@ class TestCode{
 
 // Transfusion is a blood unit with all other contextual information (lab test, etc)
 class Transfusion {
-    constructor(MRN, name, u_time, u_date, u_acc, DIN, units_in_order, u_product, threshold, t_value, t_test, t_acc, t_time,
+    constructor(MRN, name, u_time, u_date, u_acc, component, DIN, units_in_order, u_product, threshold, t_value, t_test, t_acc, t_time,
                 indic, unit_code){
         this.MRN = MRN;
         this.name = name;
@@ -123,6 +123,7 @@ class Transfusion {
         this.u_time = u_time;
         this.u_date = u_date;
         this.u_acc = u_acc;
+        this.component = component;
         this.DIN = DIN;
         this.u_product = u_product;
         this.threshold = threshold;
@@ -146,7 +147,9 @@ class Transfusion {
 
 // Blood product information from a location report
 class LocationUnit {
-    constructor(date, din, accession, provider_name, location_code, provider_id=-1, location_id=-1){
+    constructor(date, din, accession, provider_name, location_code, component, provider_id=-1, location_id=-1){
+      console.log(component);
+        this.component = component;
         this.date = date;
         this.din = din;
         this.accession = accession;
@@ -210,7 +213,9 @@ function determine_file_type(file){
 }
 
 function utilization_data_to_db(db){
-    let sql = `INSERT INTO transfusion (time, date, mrn, din, accession, num_units, units_in_order, product, units_on_day, test_type, test_result, test_accession, test_time, indicated) VALUES `;
+    let sql = `INSERT INTO transfusion (time, date, mrn, din, accession, component, num_units, units_in_order, product, units_on_day, test_type, test_result, test_accession, test_time, indicated) VALUES `;
+
+    console.log(patient_dict);
 
     for (var MRN in patient_dict){
         let patient = patient_dict[MRN];
@@ -220,12 +225,12 @@ function utilization_data_to_db(db){
             let date = trfn.u_date.getTime();
             let test_time = (trfn.t_time == "no recent test") ? -1 : trfn.t_time.getTime();
             if (trfn.t_value == undefined || trfn.t_value == "none"){trfn.t_value=-1};
-            let values = `(${time}, ${date}, ${unit_mrn}, "${trfn.DIN}", "${trfn.u_acc}", ${trfn.num_units}, ${trfn.units_in_order}, "${trfn.u_product}", ${trfn.units_on_day}, "${trfn.t_test}", ${trfn.t_value}, "${trfn.t_acc}", ${test_time}, "${trfn.indic}"), `;
+            let values = `(${time}, ${date}, ${unit_mrn}, "${trfn.DIN}", "${trfn.u_acc}", "${trfn.component}", ${trfn.num_units}, ${trfn.units_in_order}, "${trfn.u_product}", ${trfn.units_on_day}, "${trfn.t_test}", ${trfn.t_value}, "${trfn.t_acc}", ${test_time}, "${trfn.indic}"), `;
             sql += values;
         })
     }
     sql = sql.replace(/.{2}$/, "");
-    sql += ` ON CONFLICT(date, din, accession) DO UPDATE SET time=excluded.time,  mrn=excluded.mrn, num_units=excluded.num_units, units_in_order=excluded.units_in_order, product=excluded.product, units_on_day=excluded.units_on_day, test_type=excluded.test_type, test_result=excluded.test_result, test_accession=excluded.test_accession, test_time=excluded.test_time, indicated=excluded.indicated;`;
+    sql += ` ON CONFLICT(date, din, accession, component) DO UPDATE SET time=excluded.time,  component=excluded.component, mrn=excluded.mrn, num_units=excluded.num_units, units_in_order=excluded.units_in_order, product=excluded.product, units_on_day=excluded.units_on_day, test_type=excluded.test_type, test_result=excluded.test_result, test_accession=excluded.test_accession, test_time=excluded.test_time, indicated=excluded.indicated;`;
     db.run(sql, function(err){if(err){console.log(err)}});
 }
 
@@ -275,7 +280,7 @@ function make_transfusion(patient, unit){
     var threshold = parseFloat(thresholds[product].slice(1, thresholds[product].length+1));
     var test_type = prod_test[product];
 
-    var transfusion = new Transfusion(patient.MRN, patient.name, unit.time, unit.date, unit.acc, unit.DIN, unit.units_in_order, product,
+    var transfusion = new Transfusion(patient.MRN, patient.name, unit.time, unit.date, unit.acc, unit.component, unit.DIN, unit.units_in_order, product,
                                   threshold, "none", test_type, "none", "no recent test", "N/A", unit.unit_code);
 
     var most_recent_test = null;
@@ -310,8 +315,7 @@ const providerIdPattern = /\d{5}/;
 
 function location_line_type(line, col){
     try {
-        if (!col[0].includes(':') && parseInt(col[0]) > 0 && line.includes(",")){
-          console.log(line)
+        if (!col[0].includes(':') && !col[0].includes('.') && parseInt(col[0]) > 0 && line.includes(",")){
           return ["provider", ''];
         }
     } catch (e) { }
@@ -398,7 +402,7 @@ function read_utilization_report(lines){
     var MRN, name;
     var month, day, year, hour, minute;
     let unit_code = '';
-    lines.forEach(function(line){
+    lines.forEach(function(line) {
         if (line.includes("====")){section = "new-pt"; MRN_added = false; return;}
         if (line.includes("- - -")){section = "determine"; return;}
         if (line.trim() == ""){section = "new-page"; return;}
@@ -448,6 +452,7 @@ function read_utilization_report(lines){
             if (line.slice(33, 39).trim() != ""){unit_code = line.slice(33, 39).trim();}
             if (line.slice(40, 45).trim() != ""){var component = line.slice(40, 46).trim();}
             if (line.slice(51, 54).trim() != ""){var volume = parseInt(line.slice(51, 54).trim());}
+
 
             var hgb = strip(line.slice(60, 68));
             var plt = strip(line.slice(70, 78));
@@ -614,11 +619,12 @@ function add_unit(provider, location, date, col, line, blood_product_type){
     }
     let accession = line.slice(55, 62).trim();
     let new_code = line.slice(38, 46).trim();
+
     // Add product code to database
     if (new_code != '' && product_dict[new_code] == undefined){
         product_dict[new_code] = new Product(-1, new_code, blood_product_type);
     }
-    return new LocationUnit(date, DIN, accession, provider.display_name(), location.code);
+    return new LocationUnit(date, DIN, accession, provider.display_name(), location.code, new_code);
 }
 
 function add_products_to_db(db, products){
@@ -651,8 +657,7 @@ function add_providers_to_db(db, providers){
         for (var name in providers){
             let provider = providers[name];
 
-            if (!provider.middle_name){var middle_name = `NULL`}
-            else {var middle_name = `"${provider.middle_name}"`}
+            var middle_name = `"${provider.middle_name}"`
             if (provider.id == -1){
                 let provider_val = `("${provider.first_name}", ${middle_name}, "${provider.last_name}"),`;
                 values += provider_val;
@@ -696,13 +701,13 @@ function add_locations_to_db(db, locations){
 }
 
 function add_units_to_db(db, units){
-  let sql = `INSERT INTO transfusion (date, accession, din, provider, provider_id, location, location_id) VALUES `;
+  let sql = `INSERT INTO transfusion (date, accession, din, component, provider, provider_id, location, location_id) VALUES `;
   units.forEach(function(u){
-      let values = `(${u.date.getTime()}, "${u.accession}", "${u.din}", "${u.provider_name}", ${u.provider_id}, "${u.location_code}", ${u.location_id}), `
+      let values = `(${u.date.getTime()}, "${u.accession}", "${u.din}", "${u.component}", "${u.provider_name}", ${u.provider_id}, "${u.location_code}", ${u.location_id}), `
       sql += values;
   })
   sql = sql.replace(/.{2}$/, "");
-  sql += ` ON CONFLICT(date, din, accession) DO UPDATE SET provider=excluded.provider, provider_id=excluded.provider_id, location=excluded.location, location_id=excluded.location_id; `
+  sql += ` ON CONFLICT(date, din, accession, component) DO UPDATE SET provider=excluded.provider, provider_id=excluded.provider_id, location=excluded.location, location_id=excluded.location_id; `
   db.run(sql, function(err) {
     if (err) {
       console.log(err)
@@ -726,6 +731,8 @@ function read_location_report(db, location_report){
             let col = line.trim().split(/\s+/);
             let line_type = location_line_type(line, col);
             let location_str = line.slice(89, 99);
+
+            // fix location str
 
             if (line.includes('/')){
                 try {
@@ -784,21 +791,22 @@ function add_units_per_day(){
                 let other_transfusion = patient.transfusions[i]
 
                 // For transfusions with the same accession, DIN, and time, only count them once
-                let transfusion_key = other_transfusion.DIN + other_transfusion.u_acc + other_transfusion.u_time
+                let transfusion_key = other_transfusion.DIN + other_transfusion.u_acc + other_transfusion.u_time + other_transfusion.component;
                 let other_transfusion_date = just_date(other_transfusion.u_time);
                 // Determine the number of transfusions on the same day
                 if (date == other_transfusion_date &&
                     !patient.transfusions[i].unit_code.includes("additional") &&
                     !counted_orders[transfusion_key]
-                ){
+                ) {
                     units_on_day += patient.transfusions[i].units_in_order;
                     counted_orders[transfusion_key] = true
                 }
 
-                // Determine the number of transfusions that are part of the same order, i.e. same accession, DIN, and
-                // time, but with different unit codes
+                // Determine the number of transfusions that are part of the same order, i.e. same accession, DIN,
+                // component, and time, but with different unit codes
                 if (transfusion.DIN == other_transfusion.DIN &&
                     transfusion.u_acc == other_transfusion.u_acc &&
+                    transfusion.component == other_transfusion.component &&
                     transfusion.u_time.getTime() == other_transfusion.u_time.getTime() &&
                     transfusion.unit_code != other_transfusion.unit_code
                 ) {

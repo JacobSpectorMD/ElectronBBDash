@@ -200,13 +200,11 @@
     methods: {
       createNewDatabase () {
         const cmp = this
-        // const content = 'Some text to save into the file'
 
         dialog.showSaveDialog(null).then((result) => {
           if (result.filePath && result.filePath !== '') {
             db.createDatabase(result.filePath)
             db.addDatabasePath(cmp.$settingsDbPath, result.filePath).then((database) => {
-              console.log('added database path', result)
               database.exists = true
               cmp.databases.push(database)
             })

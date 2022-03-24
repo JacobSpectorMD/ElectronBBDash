@@ -191,7 +191,6 @@
       },
     },
     mounted () {
-      console.log(this.units)
     },
     methods: {
       convertDate (unit) {
@@ -206,12 +205,10 @@
         })
       },
       handleCheck (e) {
-        console.log(e)
       },
       handleSelect (item) {
         const database = this.$store.state.database
 
-        console.log(item)
         if (item.checked === 0 || item.checked === null) {
           item.checked = 1
         } else {
