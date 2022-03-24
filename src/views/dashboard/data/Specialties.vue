@@ -29,6 +29,7 @@
             fill-height
             d-flex
             filled
+            @keydown.tab.exact.prevent="tabber($event)"
           ></v-textarea>
           <div class="button-div d-flex justify-end">
             <v-btn
@@ -107,6 +108,16 @@
             })
           })
         })
+      },
+      tabber (event) {
+        const text = this.specialtyInput
+        const originalSelectionStart = event.target.selectionStart
+        const textStart = text.slice(0, originalSelectionStart)
+        const textEnd = text.slice(originalSelectionStart)
+
+        this.specialtyInput = `${textStart}\t${textEnd}`
+        event.target.value = this.specialtyInput // required to make the cursor stay in place.
+        event.target.selectionEnd = event.target.selectionStart = originalSelectionStart + 1
       },
       submitInput () {
         const cmp = this

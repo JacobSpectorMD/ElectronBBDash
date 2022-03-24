@@ -167,6 +167,7 @@ function strip(str){
 var location_dict, patient_list, patient_dict, provider_dict, product_dict;
 
 module.exports.process = async function process(db, file) {
+  let failed_codes = []
   try {
     location_dict = {}, patient_list = [], patient_dict = {}, provider_dict = {}, product_dict = {};
     const result = await read_data_dict(db)
@@ -176,10 +177,10 @@ module.exports.process = async function process(db, file) {
     if (file_type == "utilization"){
       read_utilization_report(lines);
       replace_test_codes();
-      find_most_recent_tests();
+      find_most_recent_tests(failed_codes);
       add_units_per_day();
       utilization_data_to_db(db);
-      return true
+      return {'success': true, 'failed_codes': failed_codes}
     } else if (file_type == "location") {
       const locationReportData = await read_location_report(db, file)
       await add_providers_to_db(db, result.providers);
@@ -194,10 +195,10 @@ module.exports.process = async function process(db, file) {
         if (unit.location_code){unit.location_id = locations[unit.location_code].id;}
       })
       await add_units_to_db(db, units);
-      return true
+      return {'success': true, 'failed_codes': failed_codes}
     }
   } catch (error) {
-    return false
+    return {'success': true, 'failed_codes': failed_codes}
   }
 }
 
@@ -273,6 +274,7 @@ function make_transfusion(patient, unit){
 
     var product = unit.product_type;
     if (product.includes("unknown")){
+        console.log(patient, unit)
         return new Transfusion(patient.MRN, patient.name, unit.time, unit.date, unit.acc, unit.DIN, unit.units_in_order, product,
                            "N/A", "none", "N/A", "none", "N/A", "N/A", unit.unit_code);
     }
@@ -541,19 +543,20 @@ function replace_test_codes(){
     }
 }
 
-function find_most_recent_tests(){
+function find_most_recent_tests (failed_codes){
     console.log("Determining the relevant lab for each transfusion.");
     for (var MRN in patient_dict){
         let patient = patient_dict[MRN];
         patient.units.forEach(function(unit){
             if (product_dict[unit.component] != undefined){
                 unit.product_type = product_dict[unit.component].product_type;
+                transfusion = make_transfusion(patient, unit);
+                patient.transfusions.push(transfusion);
             } else {
+                failed_codes.push(unit.component)
                 console.log("The component type " + unit.component + " needs to be added to 'Data Dictionary.text'");
                 unit.product_type = "unknown code - " + unit.component
             }
-            transfusion = make_transfusion(patient, unit);
-            patient.transfusions.push(transfusion);
         })
     }
 }

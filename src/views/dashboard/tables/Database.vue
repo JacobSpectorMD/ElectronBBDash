@@ -74,7 +74,15 @@
               <v-icon color="secondary">mdi-timer-sand</v-icon>
               Processing
             </td>
-            <td>{{ file.path }}</td>
+            <td>
+              {{ file.path }}<br>
+              <span
+                v-if="failedCodes.length > 0"
+                class="red--text"
+              >
+                Warning: {{ snackbarText }}
+              </span>
+            </td>
           </tr>
         </tbody>
       </v-simple-table>
@@ -157,10 +165,21 @@
     data () {
       return {
         database: null,
+        failedCodes: [],
         filelist: [],
         processingFiles: [],
+        snackbar: true,
         transfusions: [],
       }
+    },
+    computed: {
+      snackbarText: function () {
+        let text = 'The following codes could not be associated with a product type. Please add these to the database and try adding this file again: \n'
+        this.failedCodes.forEach(failedCode => {
+          text += failedCode
+        })
+        return text
+      },
     },
     activated () {
       if (this.database !== this.$store.state.database) {
@@ -208,7 +227,10 @@
         })
         for (const f of this.filelist) {
           processFile(database, f).then(result => {
-            if (result) {
+            if (result.failed_codes.length > 0) {
+              this.failedCodes = result.failed_codes
+            }
+            if (result.success) {
               this.processingFiles.forEach(file => {
                 if (file.path === f.path) {
                   file.processed = true

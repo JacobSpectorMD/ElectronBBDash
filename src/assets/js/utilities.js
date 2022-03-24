@@ -4,6 +4,7 @@ const sunquest_ = require('./sunquest.js')
 
 export default async function processFile (db, file) {
   const result = await sunquest_.process(db, file)
+  console.log(result)
   return result
 }
 
