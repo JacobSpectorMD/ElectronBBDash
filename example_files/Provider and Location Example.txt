@@ -1,0 +1,88 @@
+
+     03/02/2025                              YOUR CLINICAL LABORATORIES                                       PAGE
+      07:15                                 123 FAKE ST., SPRINGFIELD, US  1234                                  1
+                                                      Lab Director, MD
+                                           BLOOD BANK - SUMMARY OF FINALIZED/ISSUED UNITS
+                                                           FOR HOSPITAL P
+                                                      01/01/2025 - 02/28/2025
+
+           UNIT NO.                   COMPNT.      Dv  ACC. NO.      PAT NAME/DESTINATION  LOCATION    ACCT. NO/REASON  UNIT ABO/RH
+
+
+100001  WASHINGTON,GEORGE,MD
+
+    ISSUED,FINAL
+
+       01/01/2025
+        RED CELLS
+           W2025 25 000001  O         IRL          00  S23456        CALIFORNIA,GRIZZLYBEARA5A         52222225          A POS
+           W2025 25 002008  1         IRL          00  S23456        CALIFORNIA,GRIZZLYBEARA5A         52222225          A POS
+
+       01/02/2025
+
+          RED CELLS
+           W2021 25 555003  A         IRL          00  S23456        CALIFORNIA,GRIZZLYBEARA5A         52222225          O POS
+
+       01/03/2025
+
+          RED CELLS
+           W2025 25 444333  B         IRL          00  S23456        CALIFORNIA,GRIZZLYBEARA5A         52222225          O POS
+
+       01/04/2025
+
+          RED CELLS
+           W2021 25 277772  A         IRL          00  S23456        CALIFORNIA,GRIZZLYBEARA5A         52222225          A POS
+           W2021 25 262626  B         IRL          00  S23456        CALIFORNIA,GRIZZLYBEARPREADM      52222225          A POS
+
+       01/18/2025
+
+          RED CELLS
+           W2021 25 939393  8         IRLW         00  V57775        CALIFORNIA,GRIZZLYBEARA5A         52222225          O POS
+
+===================================================================================================================================
+
+100002  ADAMS,JOHN,NP
+
+    ISSUED,FINAL
+
+       01/16/2025
+
+          RED CELLS
+           W2007 25 865444  Q         IRL1         00  W22222        COLORADO,BIGHORN      OPB36       51115111          O POS
+===================================================================================================================================
+
+100003  JEFFERSON,THOMAS,MD
+
+    ISSUED,FINAL
+
+       02/07/2025
+
+          PLATELETS
+           W2084 25 888222  E         APRL         00  M32632        ARIZONA,RINGTAIL      PREADM      445544554          O NEG
+           W2084 25 337733  Z         BPRL         00  B33666        ARIZONA,RINGTAIL      6S          445544554          O POS
+           W2084 25 885588  V         VAPRL        00  B33666        ARIZONA,RINGTAIL      PREADM      445544554          B POS
+           W2084 25 997797  7         APRL         00  A60606        HAWAII,MONKSEAL       6S          887722888          O POS
+
+       02/08/2025
+
+          RED CELLS
+           W2006 25 031031  1         RCL          00  T01000        KANSAS,BISON          M3A         244201991          B POS
+           W2084 25 267890  2         BRL          00  T04000        ARIZONA,RINGTAIL      PREADM      445544554          O NEG
+
+       02/10/2025
+
+          RED CELLS
+           W2006 25 109901  X         RCL          00  T01000        KANSAS,BISON          M10         244201991          B POS
+
+       02/12/2025
+
+          PLASMA
+           W2021 25 765567  K         APLAS5       00  X34543        MAINE,MOOSE           M3A         622606226          B POS
+
+          PLATELETS
+           W2084 25 133133  H         BPRL         00  Q54445        MAINE,MOOSE           6S          622606226          B POS
+
+       02/13/2025
+
+          PLATELETS
+           W2084 25 228822  T         APRL         00  X47774        MAINE,MOOSE           6S          622606226          B POS

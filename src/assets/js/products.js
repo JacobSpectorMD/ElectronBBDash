@@ -34,25 +34,32 @@ export default function addSwarm (transfusionData, productType, divId, log) {
     xText = 'Most recent fibrinogen'
   }
 
-  var bin = d3Array.bin()
-    .value(function (d) { return d.value })
-    .thresholds(binValues)
-  var bins = bin(transfusionData)
+  // const bins2 = []
 
   const margin = { top: 10, right: 30, bottom: 45, left: 40 }
   const width = 0.9 * $('#' + divId).width()
   const height = 500 - margin.top - margin.bottom
 
+  var bin = d3Array.bin()
+    .value(function (d) { return d.value })
+    .thresholds(binValues)
+
+  var bins = bin(transfusionData)
+  const binnedDomain = []
+  bins.forEach((bin) => {
+    if (!binnedDomain.includes(bin.x0)) { binnedDomain.push(bin.x0) }
+    if (!binnedDomain.includes(bin.x1)) { binnedDomain.push(bin.x1) }
+  })
+  console.log('binned domain', binnedDomain)
   var x = d3.scaleBand()
     .rangeRound([margin.left + 44.5, width - 80])
-    .domain(binValues)
+    .domain(binnedDomain)
 
   var xVisual = d3.scaleBand()
     .rangeRound([0, width])
-    .domain(binValues)
+    .domain(binnedDomain)
 
   var xAxis = d3.axisBottom(xVisual)
-
   var selectLines = 0
   var selectVals = []
 
@@ -65,24 +72,23 @@ export default function addSwarm (transfusionData, productType, divId, log) {
 
       if (selectLines < 2) {
         var xCoord = e.offsetX
-        // console.log(xCoord)
 
         // Find the closest bin value
-        var current = binValues[0]
+        var current = binnedDomain[0]
         var position = 0
-        for (var i = 0; i < binValues.length; i++) {
-          if (Math.abs(xCoord - xVisual(binValues[i])) < Math.abs(xCoord - xVisual(current))) {
-            current = binValues[i]
+        for (var i = 0; i < binnedDomain.length; i++) {
+          if (Math.abs(xCoord - xVisual(binnedDomain[i])) < Math.abs(xCoord - xVisual(current))) {
+            current = binnedDomain[i]
             position = i
           }
         }
 
-        if (current === binValues[binValues.length - 1] && (xCoord - xVisual(current) > (tickSpacing / 2))) {
+        if (current === binnedDomain[binnedDomain.length - 1] && (xCoord - xVisual(current) > (tickSpacing / 2))) {
           xCoord = xVisual(current) + tickSpacing
           selectVals.push(current)
         } else {
           xCoord = xVisual(current)
-          selectVals.push(binValues[position - 1])
+          selectVals.push(binnedDomain[position - 1])
         }
 
         g.append('line')
@@ -188,9 +194,9 @@ export default function addSwarm (transfusionData, productType, divId, log) {
     .call(xAxis)
 
   if ((listLength / 5) * 6.5 + 4 > height) {
-    drawHistogram(transfusionData, bins, margin, height, width, listLength, binValues, g, x, xVisual)
+    drawHistogram(transfusionData, bins, margin, height, width, listLength, binnedDomain, g, x, xVisual)
   } else {
-    drawDotChart(bins, margin, height, width, listLength, binValues, g, x, xVisual, divId)
+    drawDotChart(bins, margin, height, width, listLength, binnedDomain, g, x, xVisual, divId)
   }
 }
 
@@ -205,8 +211,13 @@ function drawDotChart (bins, margin, height, width, listLength, binValues, g, x,
 
   // The x1 value of the last bin needs to be set to one of the binValues
   // or it will not scale properly on the x domain
-  bins[bins.length - 1].x1 = binValues[binValues.length - 1]
-  bins[0].x0 = binValues[0]
+  // bins[bins.length - 1].x1 = binValues[binValues.length - 1]
+  // bins[0].x0 = binValues[0]
+  console.log(bins)
+  console.log('310' + xVisual(310))
+    console.log('380' + xVisual(380))
+    console.log('320' + xVisual(320))
+    console.log('400' + xVisual(400))
 
   var circleG = g.selectAll('.circle')
     .data(bins)
