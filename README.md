@@ -7,9 +7,7 @@
 3. To run the application, right click on the icon and then click Open 
    - Note: double-clicking on the icon will not work the first time you run the application, but will
    work subsequently
-
-## Setup from Installer (Windows)
-- To Do
+     
 
 ## Setup from Git Repository
 Using the code from this Git repository will allow you to edit and customize the application. However, it is only
@@ -51,6 +49,6 @@ button or restarting the application.
 8. Navigate to the Graphs tab
 9. The default view is the Products view. Click on the Graph button to create a graph of all data that you have added
    - You may use any of the dropdowns or the date fields to narrow down your data
-10. Click on Providers to see the providers view
+10. Click on Providers to see the providers view 
    - Choose your product type of interest from the dropdowns, and filter using the dropdowns and date fields
    - Click on the Graph button to create graphs comparing different providers
