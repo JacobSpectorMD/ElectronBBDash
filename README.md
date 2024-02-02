@@ -2,8 +2,11 @@
 
 ## Setup from Installer (Mac)
 1. Download the application installer
-2. Double click on the installer and drag BBDash to your applications folder
-3. To run the application, double click on the icon
+   - Currently available at: https://drive.google.com/file/d/1JjfHu8nRdrQuhUqfIzCJtYHrUp7lOoYA/view?usp=drive_link
+2. Double-click on the installer and drag BBDash to your applications folder
+3. To run the application, right click on the icon and then click Open 
+   - Note: double-clicking on the icon will not work the first time you run the application, but will
+   work subsequently
 
 ## Setup from Installer (Windows)
 - To Do
