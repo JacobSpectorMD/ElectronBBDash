@@ -2,7 +2,8 @@
 
 ## Setup from Installer (Mac)
 1. Download the application installer
-   - Currently available at: https://drive.google.com/file/d/1JjfHu8nRdrQuhUqfIzCJtYHrUp7lOoYA/view?usp=drive_link
+   - Currently available from my [Google Drive](https://drive.google.com/file/d/1brE5YMc6jHl6BH_wnivJit4JNVaXXfZk/view?usp=sharing) and 
+   [Wasabi Bucket](https://s3.us-west-1.wasabisys.com/jacobspectormd/BBDash-2.1.0.dmg)
 2. Double-click on the installer and drag BBDash to your applications folder
 3. To run the application, right click on the icon and then click Open 
    - Note: double-clicking on the icon will not work the first time you run the application, but will
