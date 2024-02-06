@@ -1,6 +1,8 @@
 # BBDash
 
 ## Setup from Installer (Mac)
+[YouTube Tutorial](https://youtu.be/ZyG_Jb_RI34)
+
 1. Download the application installer
    - Currently available from my [Google Drive](https://drive.google.com/file/d/1brE5YMc6jHl6BH_wnivJit4JNVaXXfZk/view?usp=sharing) and 
    [Wasabi Bucket](https://s3.us-west-1.wasabisys.com/jacobspectormd/BBDash-2.1.0.dmg)
