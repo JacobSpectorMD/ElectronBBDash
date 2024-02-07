@@ -13,6 +13,8 @@
      
 
 ## Setup from Git Repository
+[YouTube Tutorial (Mac)](https://youtu.be/Gxyspof_PFE)
+
 Using the code from this Git repository will allow you to edit and customize the application. However, it is only
 recommended for users with some programming experience, as it can involve a significant
 amount of troubleshooting.
